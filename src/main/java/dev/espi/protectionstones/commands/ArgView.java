@@ -44,19 +44,20 @@ public class ArgView implements PSCommandArg {
                 new BukkitRunnable() {
                     @Override
                     public void run() {
+                        List<Location> locToRemove;
                         for (UUID uuid: visualisedRegions.keySet()){
                             Player player = Bukkit.getServer().getPlayer(uuid);
                             if (player == null) continue;
-                            Location regionHome;
-                            for (Iterator<Location> regionHomeIter = visualisedRegions.getOrDefault(uuid, Collections.emptyList()).iterator(); regionHomeIter.hasNext();){
-                                regionHome = regionHomeIter.next();
+                            locToRemove = new ArrayList<>();
+                            for (Location regionHome: visualisedRegions.getOrDefault(uuid, Collections.emptyList())){
                                 PSRegion r = PSRegion.fromLocation(regionHome);
                                 if (r == null || !regionHome.getWorld().equals(player.getWorld())){
-                                    visualisedRegions.get(uuid).remove(regionHome);
+                                    locToRemove.add(regionHome);
                                     continue;
                                 }
                                 displayBordersForPlayer(player, r);
                             }
+                            visualisedRegions.get(uuid).removeAll(locToRemove);
                         }
                     }
                 },
