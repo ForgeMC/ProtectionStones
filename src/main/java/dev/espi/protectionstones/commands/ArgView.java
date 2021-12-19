@@ -24,13 +24,57 @@ import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import xyz.xenondevs.particle.ParticleBuilder;
+import xyz.xenondevs.particle.ParticleEffect;
+import xyz.xenondevs.particle.data.texture.BlockTexture;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ArgView implements PSCommandArg {
 
+    public static HashMap<UUID, List<Location>> visualisedRegions = new HashMap<>();
+
     private static List<UUID> cooldown = new ArrayList<>();
+
+    public static void startDisplayBordersTask(){
+        Bukkit.getScheduler().scheduleAsyncRepeatingTask(
+                ProtectionStones.getInstance(),
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        for (UUID uuid: visualisedRegions.keySet()){
+                            Player player = Bukkit.getServer().getPlayer(uuid);
+                            if (player == null) continue;
+                            for (Location regionHome: visualisedRegions.get(uuid)){
+                                PSRegion r = PSRegion.fromLocation(regionHome);
+                                if (r == null || !regionHome.getWorld().equals(player.getWorld())){
+                                    visualisedRegions.get(uuid).remove(regionHome);
+                                    continue;
+                                }
+                                displayBordersForPlayer(player, r);
+                            }
+                        }
+                    }
+                },
+                0L,
+                2L
+        );
+    }
+
+    private static void displayBordersForPlayer(Player p, PSRegion r){
+
+        int playerY = p.getLocation().getBlockY();
+        AtomicInteger modU = new AtomicInteger(0);
+        int minY = r.getWGRegion().getMinimumPoint().getBlockY(), maxY = r.getWGRegion().getMaximumPoint().getBlockY();
+
+        RegionTraverse.traverseRegionEdge(new HashSet<>(r.getWGRegion().getPoints()), Collections.singletonList(r.getWGRegion()), tr -> {
+            handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+playerY, 0.5+tr.point.getZ()));
+            handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+minY, 0.5+tr.point.getZ()));
+            handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+maxY, 0.5+tr.point.getZ()));
+        });
+    }
 
     @Override
     public List<String> getNames() {
@@ -54,6 +98,7 @@ public class ArgView implements PSCommandArg {
 
     @Override
     public boolean executeArgument(CommandSender s, String[] args, HashMap<String, String> flags) {
+        Bukkit.getLogger().info(s.getName() + " " + args[0] + " " + flags);
         Player p = (Player) s;
 
         PSRegion r = PSRegion.fromLocationGroup(p.getLocation());
@@ -74,76 +119,16 @@ public class ArgView implements PSCommandArg {
             PSL.msg(p, PSL.VIEW_COOLDOWN.msg());
             return true;
         }
+        if (visualisedRegions.getOrDefault(p.getUniqueId(), Collections.emptyList()).contains(r.getHome())){
+            visualisedRegions.get(p.getUniqueId()).remove(r.getHome());
+            return true;
+        }
+        if (!visualisedRegions.containsKey(p.getUniqueId())){
+            visualisedRegions.put(p.getUniqueId(), new ArrayList<>());
+        }
+        visualisedRegions.get(p.getUniqueId()).add(r.getHome());
 
         PSL.msg(p, PSL.VIEW_GENERATING.msg());
-
-        // add player to cooldown
-        cooldown.add(p.getUniqueId());
-        Bukkit.getScheduler().runTaskLaterAsynchronously(ProtectionStones.getInstance(), () -> cooldown.remove(p.getUniqueId()), 20 * ProtectionStones.getInstance().getConfigOptions().psViewCooldown);
-
-        int playerY = p.getLocation().getBlockY(), minY = r.getWGRegion().getMinimumPoint().getBlockY(), maxY = r.getWGRegion().getMaximumPoint().getBlockY();
-
-        // send particles to client
-
-        Bukkit.getScheduler().runTaskAsynchronously(ProtectionStones.getInstance(), () -> {
-
-            AtomicInteger modU = new AtomicInteger(0);
-
-            if (r instanceof PSGroupRegion) {
-                PSGroupRegion pr = (PSGroupRegion) r;
-                for (PSMergedRegion psmr : pr.getMergedRegions()) {
-                    handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + psmr.getProtectBlock().getX(), 1.5 + psmr.getProtectBlock().getY(), 0.5 + psmr.getProtectBlock().getZ()));
-                    for (int y = minY; y <= maxY; y += 10) {
-                        handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + psmr.getProtectBlock().getX(), 0.5 + y, 0.5 + psmr.getProtectBlock().getZ()));
-                    }
-                }
-            } else {
-                handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + r.getProtectBlock().getX(), 1.5 + r.getProtectBlock().getY(), 0.5 + r.getProtectBlock().getZ()));
-                for (int y = minY; y <= maxY; y += 10) {
-                    handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + r.getProtectBlock().getX(), 0.5 + y, 0.5 + r.getProtectBlock().getZ()));
-                }
-            }
-
-            RegionTraverse.traverseRegionEdge(new HashSet<>(r.getWGRegion().getPoints()), Collections.singletonList(r.getWGRegion()), tr -> {
-                if (tr.isVertex) {
-                    // if (handleFakeBlock(p, tr.point.getX(), playerY, tr.point.getZ(), tempBlock, blocks, 1, wait.get())) wait.incrementAndGet();
-                    handleBlueParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+playerY, 0.5+tr.point.getZ()));
-                    for (int y = minY; y <= maxY; y += 5) {
-                        //if (handleFakeBlock(p, tr.point.getX(), y, tr.point.getZ(), tempBlock, blocks, 1, wait.get())) wait.incrementAndGet();
-                        handleBlueParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+y, 0.5+tr.point.getZ()));
-                    }
-                } else {
-                    /*if (modU.get() % 4 == 0) {
-                        handleFakeBlock(p, tr.point.getX(), playerY, tr.point.getZ(), tempBlock, blocks, 1, wait.get());
-                        handleFakeBlock(p, tr.point.getX(), minY, tr.point.getZ(), tempBlock, blocks, 1, wait.get());
-                        handleFakeBlock(p, tr.point.getX(), maxY, tr.point.getZ(), tempBlock, blocks, 1, wait.get());
-                    } else {*/
-                    if (modU.get() % 2 == 0) {
-                        handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+playerY, 0.5+tr.point.getZ()));
-                        handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+minY, 0.5+tr.point.getZ()));
-                        handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+maxY, 0.5+tr.point.getZ()));
-                    }
-                    modU.set((modU.get() + 1) % 2);
-                }
-            });
-
-            /*
-            Bukkit.getScheduler().runTaskLater(ProtectionStones.getInstance(), () -> PSL.msg(p, PSL.VIEW_GENERATE_DONE.msg()), wait.get());
-
-            Bukkit.getScheduler().runTaskLaterAsynchronously(ProtectionStones.getInstance(), () -> {
-                PSL.msg(p, PSL.VIEW_REMOVING.msg());
-                for (Block b : blocks) {
-                    if (b.getWorld().isChunkLoaded(b.getLocation().getBlockX() / 16, b.getLocation().getBlockZ() / 16)) {
-                        p.sendBlockChange(b.getLocation(), b.getBlockData());
-                        try {
-                            Thread.sleep(20);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }, wait.get() + 600L); // remove after 10 seconds */
-        });
         return true;
     }
 
@@ -153,8 +138,10 @@ public class ArgView implements PSCommandArg {
     }
 
     private static boolean handlePinkParticle(Player p, Location l) {
-        if (p.getLocation().distance(l) > 60 || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
-        Particles.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(233, 30, 99), 2), 30);
+        if (p.getLocation().distance(l) > 100 || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
+        new ParticleBuilder(ParticleEffect.BLOCK_MARKER,l)
+                .setParticleData(new BlockTexture(Material.BARRIER))
+                .display(p);
         return true;
     }
 

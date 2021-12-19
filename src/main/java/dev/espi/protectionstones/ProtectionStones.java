@@ -23,6 +23,7 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.util.profile.Profile;
 import dev.espi.protectionstones.commands.ArgHelp;
+import dev.espi.protectionstones.commands.ArgView;
 import dev.espi.protectionstones.commands.PSCommandArg;
 import dev.espi.protectionstones.placeholders.PSPlaceholderExpansion;
 import dev.espi.protectionstones.utils.BlockUtil;
@@ -641,6 +642,7 @@ public class ProtectionStones extends JavaPlugin {
             LegacyUpgrade.upgradeRegionsWithNegativeYValues();
 
         getLogger().info(ChatColor.WHITE + "ProtectionStones has successfully started!");
+        ArgView.startDisplayBordersTask();
     }
 
 }
