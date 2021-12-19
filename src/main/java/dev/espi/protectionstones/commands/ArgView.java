@@ -47,7 +47,9 @@ public class ArgView implements PSCommandArg {
                         for (UUID uuid: visualisedRegions.keySet()){
                             Player player = Bukkit.getServer().getPlayer(uuid);
                             if (player == null) continue;
-                            for (Location regionHome: visualisedRegions.get(uuid)){
+                            Location regionHome;
+                            for (Iterator<Location> regionHomeIter = visualisedRegions.getOrDefault(uuid, Collections.emptyList()).iterator(); regionHomeIter.hasNext();){
+                                regionHome = regionHomeIter.next();
                                 PSRegion r = PSRegion.fromLocation(regionHome);
                                 if (r == null || !regionHome.getWorld().equals(player.getWorld())){
                                     visualisedRegions.get(uuid).remove(regionHome);
