@@ -140,7 +140,7 @@ public class ArgView implements PSCommandArg {
     private static boolean handlePinkParticle(Player p, Location l) {
         if (p.getLocation().distance(l) > 100 || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
         new ParticleBuilder(ParticleEffect.BLOCK_MARKER,l)
-                .setParticleData(new BlockTexture(Material.BARRIER))
+                .setParticleData(new BlockTexture(Material.BARRIER)).setSpeed(2F)
                 .display(p);
         return true;
     }
