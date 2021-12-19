@@ -24,21 +24,16 @@ import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.commands.ArgMerge;
 import dev.espi.protectionstones.event.PSCreateEvent;
-import dev.espi.protectionstones.utils.LimitUtil;
-import dev.espi.protectionstones.utils.MiscUtil;
-import dev.espi.protectionstones.utils.WGMerge;
-import dev.espi.protectionstones.utils.WGUtils;
+import dev.espi.protectionstones.utils.*;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class BlockHandler {
     private static HashMap<Player, Double> lastProtectStonePlaced = new HashMap<>();
@@ -157,22 +152,46 @@ public class BlockHandler {
             ProtectionStones.getPluginLogger().info("Vault is not enabled but there is a price set on the protection stone placement! It will not work!");
         }
 
-        if (createActualRegion(p, l, blockOptions)) { // region creation successful
-
-            // take money
-            if (ProtectionStones.getInstance().isVaultSupportEnabled() && blockOptions.costToPlace != 0) {
-                EconomyResponse er = ProtectionStones.getInstance().getVaultEconomy().withdrawPlayer(p, blockOptions.costToPlace);
-                if (!er.transactionSuccess()) {
-                    PSL.msg(p, er.errorMessage);
-                    return true;
-                }
-                PSL.msg(p, PSL.PAID_MONEY.msg().replace("%price%", String.format("%.2f", blockOptions.costToPlace)));
+        PSPlayer psp = PSPlayer.fromPlayer(p);
+        List<PSRegion> regions = psp.getPSRegionsCrossWorld(psp.getPlayer().getWorld(), true);
+        int claimsNumber = 0;
+        int playerPlotsLimit = getAmountPermissionPlots(p);
+        for (PSRegion r : regions) {
+            if (r.isOwner(p.getUniqueId())) {
+                claimsNumber++;
             }
-
-            return true;
-        } else { // region creation failed
-            return false;
         }
+        p.sendMessage("Twój limit działkowicza: "+ playerPlotsLimit);
+        if(claimsNumber < playerPlotsLimit){ //|| p.isOp()
+            if (createActualRegion(p, l, blockOptions)) { // region creation successful
+                // take money
+                if (ProtectionStones.getInstance().isVaultSupportEnabled() && blockOptions.costToPlace != 0) {
+                    EconomyResponse er = ProtectionStones.getInstance().getVaultEconomy().withdrawPlayer(p, blockOptions.costToPlace);
+                    if (!er.transactionSuccess()) {
+                        PSL.msg(p, er.errorMessage);
+                        return true;
+                    }
+                    PSL.msg(p, PSL.PAID_MONEY.msg().replace("%price%", String.format("%.2f", blockOptions.costToPlace)));
+                }
+
+                return true;
+            } else { // region creation failed
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public static int getAmountPermissionPlots(Player player){
+        int amountOfHeals = 0;
+        for(PermissionAttachmentInfo perm: player.getEffectivePermissions()){
+            String permString = perm.getPermission();
+            if(permString.startsWith("fmc.dzialki.")){
+                String[] amount = permString.split("\\.");
+                amountOfHeals += Integer.parseInt(amount[2]);
+            }
+        }
+        return amountOfHeals;
     }
 
     // create the actual WG region for PS region

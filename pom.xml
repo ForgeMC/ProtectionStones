@@ -14,25 +14,25 @@
     </properties>
 
     <licenses>
-      <license>
-        <name>The Apache License, Version 2.0</name>
-        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      </license>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
     </licenses>
 
     <developers>
-      <developer>
-        <name>Devin Lin</name>
-        <email>espidev@gmail.com</email>
-        <organization>EstiNet</organization>
-        <organizationUrl>https://estinet.net</organizationUrl>
-      </developer>
+        <developer>
+            <name>Devin Lin</name>
+            <email>espidev@gmail.com</email>
+            <organization>EstiNet</organization>
+            <organizationUrl>https://estinet.net</organizationUrl>
+        </developer>
     </developers>
 
     <scm>
-      <connection>scm:git:git://github.com/espidev/ProtectionStones.git</connection>
-      <developerConnection>scm:git:ssh://github.com:espidev/ProtectionStones.git</developerConnection>
-      <url>https://github.com/espidev/ProtectionStones/tree/master</url>
+        <connection>scm:git:git://github.com/espidev/ProtectionStones.git</connection>
+        <developerConnection>scm:git:ssh://github.com:espidev/ProtectionStones.git</developerConnection>
+        <url>https://github.com/espidev/ProtectionStones/tree/master</url>
     </scm>
 
     <profiles>

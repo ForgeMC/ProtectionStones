@@ -18,16 +18,19 @@ package dev.espi.protectionstones;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.event.PSCreateEvent;
 import dev.espi.protectionstones.event.PSRemoveEvent;
+import dev.espi.protectionstones.gui.GUIScreen;
+import dev.espi.protectionstones.gui.GuiCategory;
+import dev.espi.protectionstones.utils.FMCTools;
 import dev.espi.protectionstones.utils.UUIDCache;
 import dev.espi.protectionstones.utils.WGUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -43,15 +46,23 @@ import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.FurnaceSmeltEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MainHand;
+import org.bukkit.inventory.meta.SkullMeta;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class ListenerClass implements Listener {
 
@@ -143,18 +154,115 @@ public class ListenerClass implements Listener {
         return true;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent e) {
         // shift-right click block with hand to break
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK && !e.isBlockInHand()
-                && e.getClickedBlock() != null && ProtectionStones.isProtectBlock(e.getClickedBlock())) {
+                && e.getClickedBlock() != null && ProtectionStones.isProtectBlock(e.getClickedBlock())
+                && e.getHand() == EquipmentSlot.HAND) {
 
             PSProtectBlock ppb = ProtectionStones.getBlockOptions(e.getClickedBlock());
+            PSRegion r = PSRegion.fromLocation(e.getClickedBlock().getLocation());
             if (ppb.allowShiftRightBreak && e.getPlayer().isSneaking()) {
-                PSRegion r = PSRegion.fromLocation(e.getClickedBlock().getLocation());
                 if (r != null && playerBreakProtection(e.getPlayer(), r)) { // successful
                     e.getClickedBlock().setType(Material.AIR);
                 }
+            }
+            Player player = e.getPlayer();
+            GUIScreen.openGUI(player, r, GuiCategory.HOME);
+        }
+    }
+
+    @EventHandler
+    public void onGuiClick(final InventoryClickEvent event) {
+        final Player player = (Player)event.getWhoClicked();
+        final Inventory menu = event.getClickedInventory();
+        final ItemStack clicked = event.getCurrentItem();
+        PSRegion r = PSRegion.fromLocation(player.getLocation());
+        if (event.getView().getTitle().equals(GuiCategory.HOME.getGuiName()) || event.getView().getTitle().equals(GuiCategory.SETTINGS.getGuiName()) || event.getView().getTitle().equals(GuiCategory.MEMBERS.getGuiName()) || event.getView().getTitle().equals(GuiCategory.DELETE_CONFIRM.getGuiName())) {
+            event.setCancelled(true);
+        }
+        if (event.getView().getTitle().equals(GuiCategory.HOME.getGuiName())) {
+            if (clicked.getType() == Material.BARRIER) {
+                player.closeInventory();
+            }
+            else if (clicked.getType() == Material.REDSTONE) {
+                GUIScreen.openGUI(player, r, GuiCategory.SETTINGS);
+            }
+            else if (clicked.getType() == Material.PLAYER_HEAD) {
+                GUIScreen.openGUI(player, r, GuiCategory.MEMBERS);
+            }
+            else if (clicked.getType() == Material.ITEM_FRAME) {
+                //TODO
+                //menu.setItem(event.getRawSlot(), this.formatItem(Material.ITEM_FRAME, 1, (short)0, false, "§aVisualize", instance.isVisualize().get(player) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
+            }
+            else if (clicked.getType() == Material.TNT) {
+                GUIScreen.openGUI(player, r, GuiCategory.DELETE_CONFIRM);
+            }
+        }
+        else if (event.getView().getTitle().equals(GuiCategory.SETTINGS.getGuiName())) {
+            ProtectedRegion wgRegion = r.getWGRegion();
+            if (clicked.getType() == Material.RED_BED) {
+                GUIScreen.openGUI(player, r,GuiCategory.HOME);
+                return;
+            }
+            if (clicked.getType() == Material.BRICK) {
+                //TODO
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BRICK, 1, (short)0, wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW), "§eBuilding", wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+            else if (clicked.getType() == Material.REDSTONE) {
+                //TODO
+                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.REDSTONE, 1, (short)0, this.setting_interact, "§eInteracting", this.setting_interact ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+            else if (clicked.getType() == Material.WHEAT_SEEDS) {
+
+                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.WHEAT_SEEDS, 1, (short)0, this.setting_crops, "§eCrops destroying", this.setting_crops ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+            else if (clicked.getType() == Material.ROTTEN_FLESH) {
+
+                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ROTTEN_FLESH, 1, (short)0, this.setting_mobs_hostile, "§eHostile mobs hitting", this.setting_mobs_hostile ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+            else if (clicked.getType() == Material.BEEF) {
+
+                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BEEF, 1, (short)0, this.setting_mobs_passive, "§ePassive mobs hitting", this.setting_mobs_passive ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+            else if (clicked.getType() == Material.TNT) {
+
+                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.TNT, 1, (short)0, this.setting_tnt, "§eTNT igniting", this.setting_tnt ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+            else if (clicked.getType() == Material.IRON_SWORD) {
+
+                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.IRON_SWORD, 1, (short)0, this.setting_pvp, "§ePVP", this.setting_pvp ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+            else if (clicked.getType() == Material.ENDER_PEARL) {
+
+                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ENDER_PEARL, 1, (short)0, this.setting_teleport, "§eTeleport", this.setting_teleport ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            }
+        }
+        else if (event.getView().getTitle().equals(GuiCategory.MEMBERS.getGuiName())) {
+            if (clicked.getType() == Material.RED_BED) {
+                GUIScreen.openGUI(player, r, GuiCategory.HOME);
+            }
+            else if (clicked.getType() == Material.PLAYER_HEAD) {
+                final SkullMeta meta = (SkullMeta)clicked.getItemMeta();
+                for (UUID member : r.getMembers()) {
+                    if (member.equals(meta.getOwningPlayer())) {
+                        r.removeMember(member);
+                        break;
+                    }
+                }
+                menu.remove(clicked);
+            }
+        }
+        else if (event.getView().getTitle().equals(GuiCategory.DELETE_CONFIRM.getGuiName())) {
+            if (clicked.getType() == Material.REDSTONE_BLOCK) {
+                GUIScreen.openGUI(player, r, GuiCategory.HOME);
+            }
+            else if (clicked.getType() == Material.EMERALD_BLOCK) {
+                player.closeInventory();
+                r.deleteRegion(true);
+                player.sendMessage("§cYou removed this claim.");
             }
         }
     }
