@@ -168,7 +168,8 @@ public class ListenerClass implements Listener {
                 }
             }
             Player player = e.getPlayer();
-            GUIScreen.openGUI(player, r, GuiCategory.HOME);
+            // opening gui; currently work in progress; todo
+            //GUIScreen.openGUI(player, r, GuiCategory.HOME);
         }
     }
 
