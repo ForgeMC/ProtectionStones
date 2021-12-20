@@ -15,14 +15,17 @@
 
 package dev.espi.protectionstones.gui;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.PSRegion;
+import dev.espi.protectionstones.commands.ArgView;
 import dev.espi.protectionstones.utils.FMCTools;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -31,10 +34,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class GUIScreen {
 
@@ -44,7 +44,7 @@ public class GUIScreen {
             menu.setItem(0, FMCTools.formatItem(Material.ENDER_EYE, 1, (short)0, false, "§aOverview", Arrays.asList("§7Nazwa: §f" + psRegion.getName())));
             menu.setItem(1, FMCTools.formatItem(Material.REDSTONE, 1, (short)0, false, "§aSettings", Arrays.asList("§7Manage your claim settings", "§7like Build, PVP, ...")));
             menu.setItem(2, FMCTools.formatItem(Material.PLAYER_HEAD, 1, (short)0, false, "§aMembers", Arrays.asList("§7View and edit your", "§7claim members.")));
-            //menu.setItem(3, FMCTools.formatItem(Material.ITEM_FRAME, 1, (short)0, false, "§aVisualize", psRegion.get ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            menu.setItem(3, FMCTools.formatItem(Material.ITEM_FRAME, 1, (short)0, false, "§aVisualize", ArgView.visualisedRegions.getOrDefault(player.getUniqueId(), Collections.emptyList()).contains(PSRegion.fromLocation(player.getLocation()).getHome()) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             menu.setItem(4, FMCTools.formatItem(Material.TNT, 1, (short)0, false, "§c§lRemove", Arrays.asList("§7Removes this claim", "§cWarning! §7It can't be undone.")));
             menu.setItem(8, FMCTools.formatItem(Material.BARRIER, 1, (short)0, false, "§cClose", null));
         }
@@ -58,28 +58,33 @@ public class GUIScreen {
                     setting_teleport = false;
 
             ProtectedRegion wgRegion = psRegion.getWGRegion();
-            if(wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW)){
-                setting_build = true;
+            try {
+                if (wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW)) {
+                    setting_build = true;
+                }
+                if (wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW)) {
+                    setting_interact = true;
+                }
+                if (wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW)) {
+                    setting_mobs_hostile = true;
+                }
+                if (wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW)) {
+                    setting_mobs_passive = true;
+                }
+                if (wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW)) {
+                    setting_tnt = true;
+                }
+                if (wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW)) {
+                    setting_pvp = true;
+                }
+                if (wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW)) {
+                    setting_teleport = true;
+                }
+            } catch (NullPointerException e) {
+                Bukkit.getLogger().warning("dzialka " + wgRegion.getId() + " nie posiada odpowiednich flag!");
+                return; // return if invalid
             }
-            if(wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW)){
-                setting_interact = true;
-            }
-            if(wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW)){
-                setting_mobs_hostile = true;
-            }
-            if(wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW)){
-                setting_mobs_passive = true;
-            }
-            if(wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW)){
-                setting_tnt = true;
-            }
-            if(wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW)){
-                setting_pvp = true;
-            }
-            if(wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW)){
-                setting_teleport = true;
-            }
-            //TODO
+            // todo: część flag nie działa :(
             menu.setItem(0, FMCTools.formatItem(Material.BRICK, 1, (short)0, setting_build, "§eBuilding", setting_build ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             menu.setItem(1, FMCTools.formatItem(Material.REDSTONE, 1, (short)0, setting_interact, "§eInteracting", setting_interact ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             menu.setItem(2, FMCTools.formatItem(Material.ROTTEN_FLESH, 1, (short)0, setting_mobs_hostile, "§eHostile mobs hitting", setting_mobs_hostile ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
@@ -126,10 +131,12 @@ public class GUIScreen {
             if (++count == 8) {
                 ++count;
             }
-            Player player = Bukkit.getServer().getPlayer(uuid);
+            // todo: glowa nie ma tekstury
+            OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(uuid);
             final ItemStack skull = FMCTools.formatItem(Material.PLAYER_HEAD, 1, (short)0, false, "§a" + player.getName(), Arrays.asList("§7Click to kick this player"));
             final SkullMeta skullMeta = (SkullMeta)skull.getItemMeta();
-            skullMeta.setOwner(uuid.toString());
+            PlayerProfile profile = Bukkit.createProfile(uuid, player.getName());
+            skullMeta.setPlayerProfile(profile);
             skull.setItemMeta(skullMeta);
             menu.setItem(count, skull);
         }

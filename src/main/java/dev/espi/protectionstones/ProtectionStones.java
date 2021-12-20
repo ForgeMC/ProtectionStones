@@ -62,6 +62,8 @@ public class ProtectionStones extends JavaPlugin {
     // change this when the config version goes up
     public static final int CONFIG_VERSION = 16;
 
+    public static final long REMOVE_REGION_AFTER = 1000L * 60L * 60 * 24 * 30; // 30 dni
+
     private boolean debug = false;
 
     public static File configLocation, blockDataFolder;
@@ -643,6 +645,38 @@ public class ProtectionStones extends JavaPlugin {
 
         getLogger().info(ChatColor.WHITE + "ProtectionStones has successfully started!");
         ArgView.startDisplayBordersTask();
+        // deleting inactive regions
+        boolean toDelete;
+        for (ProtectedRegion psRegion: Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
+                Bukkit.getWorld("world"))).getRegions().values()){
+            toDelete = true;
+            for (UUID owner: psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                if (System.currentTimeMillis() - Bukkit.getOfflinePlayer(owner).getLastLogin() <
+                        REMOVE_REGION_AFTER) toDelete = false;
+            if (toDelete) {
+                Bukkit.getLogger().info("removing region " +
+                        psRegion.getId() + " from world because all owners are inactive");
+                try {
+                    Objects.requireNonNull(PSRegion.fromWGRegion(Bukkit.getWorld(
+                            "world"), psRegion)).deleteRegion(true);
+                } catch (NullPointerException e){Bukkit.getLogger().warning("failed!\n" + e.getMessage());}
+            }
+        }
+        for (ProtectedRegion psRegion: Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
+                Bukkit.getWorld("world_nether"))).getRegions().values()){
+            toDelete = true;
+            for (UUID owner: psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                if (System.currentTimeMillis() - Bukkit.getOfflinePlayer(owner).getLastLogin() <
+                        REMOVE_REGION_AFTER) toDelete = false;
+            if (toDelete) {
+                Bukkit.getLogger().info("removing region " + psRegion.getId() +
+                        " from nether because all owners are inactive");
+                try {
+                    Objects.requireNonNull(PSRegion.fromWGRegion(Bukkit.getWorld("world_nether"),
+                            psRegion)).deleteRegion(true);
+                }
+                catch (NullPointerException e){Bukkit.getLogger().warning("failed!\n" + e.getMessage());}
+            }
+        }
     }
-
 }

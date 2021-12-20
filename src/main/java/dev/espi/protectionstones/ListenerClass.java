@@ -23,6 +23,8 @@ import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import dev.espi.protectionstones.commands.ArgSethome;
+import dev.espi.protectionstones.commands.ArgView;
 import dev.espi.protectionstones.event.PSCreateEvent;
 import dev.espi.protectionstones.event.PSRemoveEvent;
 import dev.espi.protectionstones.gui.GUIScreen;
@@ -59,10 +61,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class ListenerClass implements Listener {
 
@@ -183,6 +182,10 @@ public class ListenerClass implements Listener {
             event.setCancelled(true);
         }
         if (event.getView().getTitle().equals(GuiCategory.HOME.getGuiName())) {
+            if (clicked == null){
+                event.setCancelled(true);
+                return;
+            }
             if (clicked.getType() == Material.BARRIER) {
                 player.closeInventory();
             }
@@ -193,69 +196,81 @@ public class ListenerClass implements Listener {
                 GUIScreen.openGUI(player, r, GuiCategory.MEMBERS);
             }
             else if (clicked.getType() == Material.ITEM_FRAME) {
-                //TODO
-                //menu.setItem(event.getRawSlot(), this.formatItem(Material.ITEM_FRAME, 1, (short)0, false, "§aVisualize", instance.isVisualize().get(player) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-                player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
+                if (ArgView.visualisedRegions.getOrDefault(player.getUniqueId(), Collections.emptyList()).contains(r.getHome())){
+                    ArgView.visualisedRegions.get(player.getUniqueId()).remove(r.getHome());
+                }else {
+                    if (!ArgView.visualisedRegions.containsKey(player.getUniqueId()))
+                        ArgView.visualisedRegions.put(player.getUniqueId(), new ArrayList<>());
+                    ArgView.visualisedRegions.get(player.getUniqueId()).add(r.getHome());
+                    //menu.setItem(event.getRawSlot(), this.formatItem(Material.ITEM_FRAME, 1, (short)0, false, "§aVisualize", instance.isVisualize().get(player) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                    player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
+                }
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ITEM_FRAME, 1, (short)0, false, "§aVisualize", ArgView.visualisedRegions.getOrDefault(player.getUniqueId(), Collections.emptyList()).contains(PSRegion.fromLocation(player.getLocation()).getHome()) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
             else if (clicked.getType() == Material.TNT) {
                 GUIScreen.openGUI(player, r, GuiCategory.DELETE_CONFIRM);
             }
         }
         else if (event.getView().getTitle().equals(GuiCategory.SETTINGS.getGuiName())) {
+            if (clicked == null){
+                event.setCancelled(true);
+                return;
+            }
             ProtectedRegion wgRegion = r.getWGRegion();
             if (clicked.getType() == Material.RED_BED) {
                 GUIScreen.openGUI(player, r,GuiCategory.HOME);
                 return;
             }
             if (clicked.getType() == Material.BRICK) {
-                //TODO
+                wgRegion.setFlag(Flags.BUILD, wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
                 menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BRICK, 1, (short)0, wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW), "§eBuilding", wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
             else if (clicked.getType() == Material.REDSTONE) {
-                //TODO
-                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.REDSTONE, 1, (short)0, this.setting_interact, "§eInteracting", this.setting_interact ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            }
-            else if (clicked.getType() == Material.WHEAT_SEEDS) {
-
-                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.WHEAT_SEEDS, 1, (short)0, this.setting_crops, "§eCrops destroying", this.setting_crops ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                wgRegion.setFlag(Flags.INTERACT, wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.REDSTONE, 1, (short)0, wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW), "§eBuilding", wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
             else if (clicked.getType() == Material.ROTTEN_FLESH) {
-
-                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ROTTEN_FLESH, 1, (short)0, this.setting_mobs_hostile, "§eHostile mobs hitting", this.setting_mobs_hostile ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                wgRegion.setFlag(Flags.MOB_DAMAGE, wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ROTTEN_FLESH, 1, (short)0, wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW), "§eHostile mobs hitting", wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
             else if (clicked.getType() == Material.BEEF) {
-
-                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BEEF, 1, (short)0, this.setting_mobs_passive, "§ePassive mobs hitting", this.setting_mobs_passive ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                wgRegion.setFlag(Flags.DAMAGE_ANIMALS, wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BEEF, 1, (short)0, wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW), "§ePassive mobs hitting", wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
             else if (clicked.getType() == Material.TNT) {
-
-                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.TNT, 1, (short)0, this.setting_tnt, "§eTNT igniting", this.setting_tnt ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                wgRegion.setFlag(Flags.TNT, wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.TNT, 1, (short)0, wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW), "§eTNT igniting", wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
             else if (clicked.getType() == Material.IRON_SWORD) {
-
-                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.IRON_SWORD, 1, (short)0, this.setting_pvp, "§ePVP", this.setting_pvp ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                wgRegion.setFlag(Flags.PVP, wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.IRON_SWORD, 1, (short)0, wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW), "§ePVP", wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
             else if (clicked.getType() == Material.ENDER_PEARL) {
-
-                //menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ENDER_PEARL, 1, (short)0, this.setting_teleport, "§eTeleport", this.setting_teleport ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                wgRegion.setFlag(Flags.ENDERPEARL, wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ENDER_PEARL, 1, (short)0, wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW), "§eTeleport", wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
         }
         else if (event.getView().getTitle().equals(GuiCategory.MEMBERS.getGuiName())) {
-            if (clicked.getType() == Material.RED_BED) {
-                GUIScreen.openGUI(player, r, GuiCategory.HOME);
-            }
-            else if (clicked.getType() == Material.PLAYER_HEAD) {
-                final SkullMeta meta = (SkullMeta)clicked.getItemMeta();
-                for (UUID member : r.getMembers()) {
-                    if (member.equals(meta.getOwningPlayer())) {
-                        r.removeMember(member);
-                        break;
+            if (clicked != null) {
+                if (clicked.getType() == Material.RED_BED) {
+                    GUIScreen.openGUI(player, r, GuiCategory.HOME);
+                } else if (clicked.getType() == Material.PLAYER_HEAD) {
+                    final SkullMeta meta = (SkullMeta) clicked.getItemMeta();
+                    for (UUID member : r.getMembers()) {
+                        if (member.equals(meta.getOwningPlayer().getUniqueId())) {
+                            r.removeMember(member);
+                            break;
+                        }
                     }
+                    menu.remove(clicked);
                 }
-                menu.remove(clicked);
             }
         }
         else if (event.getView().getTitle().equals(GuiCategory.DELETE_CONFIRM.getGuiName())) {
+            if (clicked == null){
+                event.setCancelled(true);
+                return;
+            }
             if (clicked.getType() == Material.REDSTONE_BLOCK) {
                 GUIScreen.openGUI(player, r, GuiCategory.HOME);
             }
