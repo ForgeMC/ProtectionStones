@@ -648,9 +648,9 @@ public class ProtectionStones extends JavaPlugin {
         // deleting inactive regions
         boolean toDelete;
         for (ProtectedRegion psRegion: Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
-                Bukkit.getWorld("world"))).getRegions().values()){
+                Bukkit.getWorld("world"))).getRegions().values()) {
             toDelete = true;
-            for (UUID owner: psRegion.getOwners().getPlayerDomain().getUniqueIds())
+            for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
                 if (System.currentTimeMillis() - Bukkit.getOfflinePlayer(owner).getLastLogin() <
                         REMOVE_REGION_AFTER) toDelete = false;
             if (toDelete) {
@@ -659,7 +659,9 @@ public class ProtectionStones extends JavaPlugin {
                 try {
                     Objects.requireNonNull(PSRegion.fromWGRegion(Bukkit.getWorld(
                             "world"), psRegion)).deleteRegion(true);
-                } catch (NullPointerException e){Bukkit.getLogger().warning("failed!\n" + e.getMessage());}
+                } catch (NullPointerException e) {
+                    // by kompiler sie odwalił
+                }
             }
         }
         for (ProtectedRegion psRegion: Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
@@ -674,8 +676,8 @@ public class ProtectionStones extends JavaPlugin {
                 try {
                     Objects.requireNonNull(PSRegion.fromWGRegion(Bukkit.getWorld("world_nether"),
                             psRegion)).deleteRegion(true);
+                } catch (NullPointerException e) {// by kompiler sie odwalił
                 }
-                catch (NullPointerException e){Bukkit.getLogger().warning("failed!\n" + e.getMessage());}
             }
         }
     }
