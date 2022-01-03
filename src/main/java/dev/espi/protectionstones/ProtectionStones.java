@@ -62,7 +62,7 @@ public class ProtectionStones extends JavaPlugin {
     // change this when the config version goes up
     public static final int CONFIG_VERSION = 16;
 
-    public static final long REMOVE_REGION_AFTER = 1000L * 60L * 60 * 24 * 30; // 30 dni
+    public static final long REMOVE_REGION_AFTER = 1000L * 60L * 60 * 24 * 45; // 45 dni
 
     private boolean debug = false;
 
@@ -657,8 +657,8 @@ public class ProtectionStones extends JavaPlugin {
                 Bukkit.getLogger().info("removing region " +
                         psRegion.getId() + " from world because all owners are inactive");
                 try {
-                    Objects.requireNonNull(PSRegion.fromWGRegion(Bukkit.getWorld(
-                            "world"), psRegion)).deleteRegion(true);
+                    Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
+                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds()) Bukkit.getLogger().warning("owner " + owner + "last played " + Bukkit.getOfflinePlayer(owner).getLastLogin() + ", current time is " + System.currentTimeMillis());
                 } catch (NullPointerException e) {
                     // by kompiler sie odwalił
                 }
@@ -674,8 +674,8 @@ public class ProtectionStones extends JavaPlugin {
                 Bukkit.getLogger().info("removing region " + psRegion.getId() +
                         " from nether because all owners are inactive");
                 try {
-                    Objects.requireNonNull(PSRegion.fromWGRegion(Bukkit.getWorld("world_nether"),
-                            psRegion)).deleteRegion(true);
+                    Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
+                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds()) Bukkit.getLogger().warning("owner " + owner + "last played " + Bukkit.getOfflinePlayer(owner).getLastLogin() + ", current time is " + System.currentTimeMillis());
                 } catch (NullPointerException e) {// by kompiler sie odwalił
                 }
             }
