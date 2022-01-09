@@ -651,14 +651,15 @@ public class ProtectionStones extends JavaPlugin {
                 Bukkit.getWorld("world"))).getRegions().values()) {
             toDelete = true;
             for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
-                if (System.currentTimeMillis() - Bukkit.getOfflinePlayer(owner).getLastLogin() <
+                if (System.currentTimeMillis() - PlayerLastTimePlayedReader.getLastPlayed(owner) <
                         REMOVE_REGION_AFTER) toDelete = false;
             if (toDelete) {
                 Bukkit.getLogger().info("removing region " +
                         psRegion.getId() + " from world because all owners are inactive");
                 try {
                     Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
-                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds()) Bukkit.getLogger().warning("owner " + owner + "last played " + Bukkit.getOfflinePlayer(owner).getLastLogin() + ", current time is " + System.currentTimeMillis());
+                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                        Bukkit.getLogger().warning("owner " + owner + "last played " + PlayerLastTimePlayedReader.getLastPlayed(owner) + ", current time is " + System.currentTimeMillis());
                 } catch (NullPointerException e) {
                     // by kompiler sie odwalił
                 }
@@ -668,14 +669,15 @@ public class ProtectionStones extends JavaPlugin {
                 Bukkit.getWorld("world_nether"))).getRegions().values()){
             toDelete = true;
             for (UUID owner: psRegion.getOwners().getPlayerDomain().getUniqueIds())
-                if (System.currentTimeMillis() - Bukkit.getOfflinePlayer(owner).getLastLogin() <
+                if (System.currentTimeMillis() - PlayerLastTimePlayedReader.getLastPlayed(owner) <
                         REMOVE_REGION_AFTER) toDelete = false;
             if (toDelete) {
                 Bukkit.getLogger().info("removing region " + psRegion.getId() +
                         " from nether because all owners are inactive");
                 try {
                     Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
-                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds()) Bukkit.getLogger().warning("owner " + owner + "last played " + Bukkit.getOfflinePlayer(owner).getLastLogin() + ", current time is " + System.currentTimeMillis());
+                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                        Bukkit.getLogger().warning("owner " + owner + "last played " + PlayerLastTimePlayedReader.getLastPlayed(owner) + ", current time is " + System.currentTimeMillis());
                 } catch (NullPointerException e) {// by kompiler sie odwalił
                 }
             }
