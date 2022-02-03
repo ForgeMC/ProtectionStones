@@ -62,7 +62,7 @@ public class ProtectionStones extends JavaPlugin {
     // change this when the config version goes up
     public static final int CONFIG_VERSION = 16;
 
-    public static final long REMOVE_REGION_AFTER = 1000L * 60L * 1 * 1 * 1; // 45 dni
+    public static final long REMOVE_REGION_AFTER = 1000L * 60L * 60L * 24L * 45L; // 45 dni
 
     private boolean debug = false;
 
