@@ -62,7 +62,7 @@ public class ProtectionStones extends JavaPlugin {
     // change this when the config version goes up
     public static final int CONFIG_VERSION = 16;
 
-    public static final long REMOVE_REGION_AFTER = 1000L * 60L * 60 * 24 * 45; // 45 dni
+    public static final long REMOVE_REGION_AFTER = 1000L * 60L * 1 * 1 * 1; // 45 dni
 
     private boolean debug = false;
 
@@ -526,6 +526,45 @@ public class ProtectionStones extends JavaPlugin {
         }
     }
 
+    private static void removeInactiveRegions() {
+        boolean toDelete;
+        for (ProtectedRegion psRegion : Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
+                Bukkit.getWorld("world"))).getRegions().values()) {
+            toDelete = true;
+            for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                if (System.currentTimeMillis() - PlayerLastTimePlayedReader.getLastPlayed(owner) <
+                        REMOVE_REGION_AFTER) toDelete = false;
+            if (toDelete) {
+                Bukkit.getLogger().info("removing region " +
+                        psRegion.getId() + " from world because all owners are inactive");
+                try {
+                    Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
+                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                        Bukkit.getLogger().warning("owner " + owner + "last played " + PlayerLastTimePlayedReader.getLastPlayed(owner) + ", current time is " + System.currentTimeMillis());
+                } catch (NullPointerException e) {
+                    // by kompiler sie odwalił
+                }
+            }
+        }
+        for (ProtectedRegion psRegion : Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
+                Bukkit.getWorld("world_nether"))).getRegions().values()) {
+            toDelete = true;
+            for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                if (System.currentTimeMillis() - PlayerLastTimePlayedReader.getLastPlayed(owner) <
+                        REMOVE_REGION_AFTER) toDelete = false;
+            if (toDelete) {
+                Bukkit.getLogger().info("removing region " + psRegion.getId() +
+                        " from nether because all owners are inactive");
+                try {
+                    Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
+                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
+                        Bukkit.getLogger().warning("owner " + owner + "last played " + PlayerLastTimePlayedReader.getLastPlayed(owner) + ", current time is " + System.currentTimeMillis());
+                } catch (NullPointerException e) {// by kompiler sie odwalił
+                }
+            }
+        }
+    }
+
     @Override
     public void onLoad() {
         // register WG flags
@@ -645,42 +684,11 @@ public class ProtectionStones extends JavaPlugin {
 
         getLogger().info(ChatColor.WHITE + "ProtectionStones has successfully started!");
         ArgView.startDisplayBordersTask();
-        // deleting inactive regions
-        boolean toDelete;
-        for (ProtectedRegion psRegion: Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
-                Bukkit.getWorld("world"))).getRegions().values()) {
-            toDelete = true;
-            for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
-                if (System.currentTimeMillis() - PlayerLastTimePlayedReader.getLastPlayed(owner) <
-                        REMOVE_REGION_AFTER) toDelete = false;
-            if (toDelete) {
-                Bukkit.getLogger().info("removing region " +
-                        psRegion.getId() + " from world because all owners are inactive");
-                try {
-                    Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
-                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
-                        Bukkit.getLogger().warning("owner " + owner + "last played " + PlayerLastTimePlayedReader.getLastPlayed(owner) + ", current time is " + System.currentTimeMillis());
-                } catch (NullPointerException e) {
-                    // by kompiler sie odwalił
-                }
-            }
-        }
-        for (ProtectedRegion psRegion: Objects.requireNonNull(WGUtils.getRegionManagerWithWorld(
-                Bukkit.getWorld("world_nether"))).getRegions().values()){
-            toDelete = true;
-            for (UUID owner: psRegion.getOwners().getPlayerDomain().getUniqueIds())
-                if (System.currentTimeMillis() - PlayerLastTimePlayedReader.getLastPlayed(owner) <
-                        REMOVE_REGION_AFTER) toDelete = false;
-            if (toDelete) {
-                Bukkit.getLogger().info("removing region " + psRegion.getId() +
-                        " from nether because all owners are inactive");
-                try {
-                    Bukkit.getLogger().warning("region owners: " + psRegion.getOwners().getPlayerDomain().getUniqueIds());
-                    for (UUID owner : psRegion.getOwners().getPlayerDomain().getUniqueIds())
-                        Bukkit.getLogger().warning("owner " + owner + "last played " + PlayerLastTimePlayedReader.getLastPlayed(owner) + ", current time is " + System.currentTimeMillis());
-                } catch (NullPointerException e) {// by kompiler sie odwalił
-                }
-            }
-        }
+    }
+
+    @Override
+    public void onDisable() {
+        ProtectionStones.removeInactiveRegions();
+        super.onDisable();
     }
 }
