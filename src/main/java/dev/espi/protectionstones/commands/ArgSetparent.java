@@ -20,7 +20,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.PSL;
 import dev.espi.protectionstones.PSRegion;
 import dev.espi.protectionstones.ProtectionStones;
-import dev.espi.protectionstones.utils.ChatUtils;
+import dev.espi.protectionstones.utils.ChatUtil;
 import dev.espi.protectionstones.utils.WGUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -91,7 +91,7 @@ public class ArgSetparent implements PSCommandArg {
                 return true;
             }
             if (parent.size() > 1) {
-                ChatUtils.displayDuplicateRegionAliases(p, parent);
+                ChatUtil.displayDuplicateRegionAliases(p, parent);
                 return true;
             }
 

@@ -40,6 +40,10 @@ prevent_block_place_in_restricted_world = true
 # If set to false, the protection block can only be placed in existing regions.
 allow_placing_in_wild = true
 
+# Whether or not to allow the block to bypass the WorldGuard passthrough flag.
+# This allows the protection block to be placed even if WorldGuard prevents block placing in the wild.
+placing_bypasses_wg_passthrough = true
+
 [region]
     # Minimum distance between claims (that aren't owned by the same owner), measured from the protection block to the edge of another region
     # You will probably have to change this between blocks, since the region sizes will be different
@@ -155,6 +159,9 @@ allow_placing_in_wild = true
         "&6(⌐■_■)ノ♪ Nobody's going to touch my stuff!",
     ]
 
+    # Whether the item should have an "glow/enchant" effect look when in a player's inventory.
+    enchanted_effect = false
+
     # Add price when using /ps get
     # Must have compatible economy plugin (requires Vault, ie. Essentials)
     # Must be a decimal (ex. not 10, but 10.0)
@@ -176,6 +183,9 @@ allow_placing_in_wild = true
     # Amount of the protection item to give when crafted
     recipe_amount = 1
 
+    # The custom model data of the block item, useful for resource packs. Set to -1 to disable.
+    custom_model_data = -1
+
 [economy]
     # Taxes must be enabled in config.toml first (tax_enabled)
     # The amount to tax the region per tax cycle.
@@ -195,7 +205,7 @@ allow_placing_in_wild = true
     tenant_rent_role = "member"
 
     # Should the landlords of rented out regions still be an owner while it is rented out?
-    landlord_still_owner = true
+    landlord_still_owner = false
 
 [behaviour]
     # Hide protection stone right away when placed?

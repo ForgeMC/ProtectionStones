@@ -17,6 +17,7 @@ package dev.espi.protectionstones;
 
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.managers.RemovalStrategy;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.event.PSRemoveEvent;
 import dev.espi.protectionstones.utils.MiscUtil;
@@ -228,8 +229,8 @@ public class PSStandardRegion extends PSRegion {
 
     @Override
     public void removeRenting() {
-        removeMember(getTenant());
-        removeOwner(getTenant());
+        getWGRegion().getOwners().removeAll();
+        getWGRegion().getMembers().removeAll();
         addOwner(getLandlord());
 
         setLandlord(null);
@@ -272,7 +273,7 @@ public class PSStandardRegion extends PSRegion {
 
     @Override
     public void setTaxPaymentsDue(List<TaxPayment> taxPayments) {
-        wgregion.setFlag(FlagHandler.PS_TAX_PAYMENTS_DUE, taxPayments.stream().map(TaxPayment::toFlagEntry).collect(Collectors.toSet()));
+        WGUtils.setFlagIfNeeded(wgregion, FlagHandler.PS_TAX_PAYMENTS_DUE, taxPayments.stream().map(TaxPayment::toFlagEntry).collect(Collectors.toSet()));
     }
 
     @Override
@@ -296,7 +297,8 @@ public class PSStandardRegion extends PSRegion {
 
     @Override
     public void setRegionLastTaxPaymentAddedEntries(List<LastRegionTaxPaymentEntry> entries) {
-        wgregion.setFlag(FlagHandler.PS_TAX_LAST_PAYMENT_ADDED, entries.stream().map(LastRegionTaxPaymentEntry::toFlagEntry).collect(Collectors.toSet()));
+        Set<String> set = entries.stream().map(LastRegionTaxPaymentEntry::toFlagEntry).collect(Collectors.toSet());
+        WGUtils.setFlagIfNeeded(wgregion, FlagHandler.PS_TAX_LAST_PAYMENT_ADDED, set);
     }
 
     @Override
@@ -306,7 +308,7 @@ public class PSStandardRegion extends PSRegion {
 
     @Override
     public void setTaxAutopayer(UUID player) {
-        wgregion.setFlag(FlagHandler.PS_TAX_AUTOPAYER, player == null ? null : player.toString());
+        WGUtils.setFlagIfNeeded(wgregion, FlagHandler.PS_TAX_AUTOPAYER, player == null ? null : player.toString());
     }
 
     @Override
@@ -500,11 +502,13 @@ public class PSStandardRegion extends PSRegion {
             return false;
         }
 
+        // set the physical block to air
         if (deleteBlock && !this.isHidden()) {
             this.getProtectBlock().setType(Material.AIR);
         }
 
-        if (getName() != null) { // remove name from cache
+        // remove name from cache
+        if (getName() != null) {
             HashMap<String, ArrayList<String>> rIds = ProtectionStones.regionNameToID.get(getWorld().getUID());
             if (rIds != null && rIds.containsKey(getName())) {
                 if (rIds.get(getName()).size() == 1) {
@@ -514,7 +518,11 @@ public class PSStandardRegion extends PSRegion {
                 }
             }
         }
-        rgmanager.removeRegion(wgregion.getId());
+
+        // remove region from WorldGuard
+        // specify UNSET_PARENT_IN_CHILDREN removal strategy so that region children don't get deleted
+        rgmanager.removeRegion(wgregion.getId(), RemovalStrategy.UNSET_PARENT_IN_CHILDREN);
+
         return true;
     }
 

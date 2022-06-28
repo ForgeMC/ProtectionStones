@@ -15,7 +15,6 @@
 
 package dev.espi.protectionstones.commands;
 
-import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.PSL;

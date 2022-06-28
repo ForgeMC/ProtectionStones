@@ -16,7 +16,6 @@
 package dev.espi.protectionstones.utils.upgrade;
 
 import com.electronwill.nightconfig.core.file.FileConfig;
-import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
