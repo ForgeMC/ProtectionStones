@@ -49,6 +49,8 @@ public class PSProtectBlock {
     public boolean preventBlockPlaceInRestrictedWorld;
     @Path("allow_placing_in_wild")
     public boolean allowPlacingInWild;
+    @Path("placing_bypasses_wg_passthrough")
+    public Boolean placingBypassesWGPassthrough;
 
     // region section
     @Path("region.distance_between_claims")
@@ -93,6 +95,8 @@ public class PSProtectBlock {
     public String displayName;
     @Path("block_data.lore")
     public List<String> lore;
+    @Path("block_data.enchanted_effect")
+    public boolean enchantedEffect;
     @Path("block_data.price")
     @SpecDoubleInRange(min = 0.0, max = Double.MAX_VALUE)
     public double price;
@@ -103,6 +107,8 @@ public class PSProtectBlock {
     @Path("block_data.recipe_amount")
     @SpecIntInRange(min = 0, max = 64)
     public int recipeAmount;
+    @Path("block_data.custom_model_data")
+    public int customModelData;
 
     // economy section
     @Path("economy.tax_amount")
