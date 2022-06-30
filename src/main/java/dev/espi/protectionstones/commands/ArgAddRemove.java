@@ -15,17 +15,21 @@
 
 package dev.espi.protectionstones.commands;
 
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.util.profile.Profile;
 import dev.espi.protectionstones.*;
 import dev.espi.protectionstones.utils.LimitUtil;
 import dev.espi.protectionstones.utils.UUIDCache;
 import dev.espi.protectionstones.utils.WGUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -144,10 +148,18 @@ public class ArgAddRemove implements PSCommandArg {
                 }
 
                 switch (operationType) {
-                    case "add" -> r.addMember(addPlayerUuid);
-                    case "remove" -> r.removeMember(addPlayerUuid);
-                    case "addowner" -> r.addOwner(addPlayerUuid);
-                    case "removeowner" -> r.removeOwner(addPlayerUuid);
+                    case "add":
+                        r.addMember(addPlayerUuid);
+                        break;
+                    case "remove":
+                        r.removeMember(addPlayerUuid);
+                        break;
+                    case "addowner":
+                        r.addOwner(addPlayerUuid);
+                        break;
+                    case "removeowner":
+                        r.removeOwner(addPlayerUuid);
+                        break;
                 }
             }
         });

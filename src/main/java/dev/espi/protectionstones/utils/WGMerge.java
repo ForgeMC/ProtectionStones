@@ -17,7 +17,6 @@ package dev.espi.protectionstones.utils;
 
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.managers.RemovalStrategy;
 import com.sk89q.worldguard.protection.regions.ProtectedPolygonalRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.*;
@@ -181,7 +180,7 @@ public class WGMerge {
                     mergeRegions(w, rm, psr, Arrays.asList(psr));
                 } else {
                     psr.setName(null); // remove name from cache
-                    rm.removeRegion(psr.getId(), RemovalStrategy.UNSET_PARENT_IN_CHILDREN);
+                    rm.removeRegion(psr.getId());
                 }
 
                 // add all regions that do NOT contain the root ID region

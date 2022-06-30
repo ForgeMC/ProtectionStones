@@ -19,6 +19,7 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.*;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
@@ -31,9 +32,6 @@ public class LimitUtil {
     public static String checkAddOwner(PSPlayer psp, List<PSProtectBlock> blocksAdded) {
         HashMap<PSProtectBlock, Integer> regionLimits = psp.getRegionLimits();
         int maxPS = psp.getGlobalRegionLimits();
-
-        ProtectionStones.getInstance().debug(String.format("Player's global limit is %d.", maxPS));
-        ProtectionStones.getInstance().debug(String.format("Player has limits on %d region types.", regionLimits.size()));
 
         if (maxPS != -1 || !regionLimits.isEmpty()) { // only check if limit was found
 

@@ -87,6 +87,7 @@ class ConfigPlaceholders {
                 return getConf().allowAddownerForOfflinePlayersWithoutLp + "";
             case "allow_home_teleport_for_members":
                 return getConf().allowHomeTeleportForMembers + "";
+
             case "admin_cleanup_delete_regions_with_members_but_no_owners":
                 return getConf().cleanupDeleteRegionsWithMembersButNoOwners + "";
 
@@ -127,10 +128,6 @@ class ConfigPlaceholders {
                 return MiscUtil.concatWithoutLast(b.worlds, " ");
             case "prevent_block_place_in_restricted_world":
                 return b.preventBlockPlaceInRestrictedWorld + "";
-            case "allow_placing_in_wild":
-                return b.allowPlacingInWild + "";
-            case "placing_bypasses_wg_passthrough":
-                return b.placingBypassesWGPassthrough + "";
 
             case "region_distance_between_claims":
                 return b.distanceBetweenClaims + "";
@@ -172,8 +169,6 @@ class ConfigPlaceholders {
                     sb.append(b.lore.get(i)).append("\n");
                 }
                 return sb.toString();
-            case "block_data_enchanted_effect":
-                return b.enchantedEffect + "";
             case "block_data_price":
                 return String.format("%.2f", b.price);
             case "block_data_allow_craft_with_custom_recipe":
@@ -188,8 +183,6 @@ class ConfigPlaceholders {
                 return sb.toString();
             case "block_data_recipe_amount":
                 return b.recipeAmount + "";
-            case "block_data_custom_model_data":
-                return b.customModelData + "";
 
             case "economy_tax_amount":
                 return String.format("%.2f", b.taxAmount);

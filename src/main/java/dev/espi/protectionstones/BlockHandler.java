@@ -19,8 +19,6 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.flags.Flag;
-import com.sk89q.worldguard.protection.flags.Flags;
-import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -61,25 +59,7 @@ public class BlockHandler {
 
         ProtectedRegion td = new ProtectedCuboidRegion("regionRadiusTest" + (long) (bx + by + bz), true, min, max);
         td.setPriority(blockOptions.priority);
-        RegionManager rgm = WGUtils.getRegionManagerWithWorld(w);
-
-        // if the radius test region overlaps an unowned region
-        if (rgm.overlapsUnownedRegion(td, lp)) {
-            for (ProtectedRegion rg : rgm.getApplicableRegions(td)) {
-                // skip if the user is already an owner
-                if (rg.isOwner(lp)) continue;
-
-                if (ProtectionStones.isPSRegion(rg) && rg.getFlag(Flags.PASSTHROUGH) != StateFlag.State.ALLOW) {
-                    // if it is a PS region, and "passthrough allow" is not set, then it is not far enough
-                    return false;
-                } else if (rg.getPriority() >= td.getPriority()) {
-                    // if the priorities are the same for plain WorldGuard regions, it is not far enough
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        return !WGUtils.overlapsStrongerRegion(w, td, lp);
     }
 
     // create PS region from a block place event

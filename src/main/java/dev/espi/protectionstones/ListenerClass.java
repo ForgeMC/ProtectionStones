@@ -15,13 +15,13 @@
 
 package dev.espi.protectionstones;
 
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.bukkit.event.block.PlaceBlockEvent;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.commands.ArgSethome;
 import dev.espi.protectionstones.commands.ArgView;
@@ -30,10 +30,6 @@ import dev.espi.protectionstones.event.PSRemoveEvent;
 import dev.espi.protectionstones.gui.GUIScreen;
 import dev.espi.protectionstones.gui.GuiCategory;
 import dev.espi.protectionstones.utils.FMCTools;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
-import dev.espi.protectionstones.event.PSCreateEvent;
-import dev.espi.protectionstones.event.PSRemoveEvent;
-import dev.espi.protectionstones.utils.RecipeUtil;
 import dev.espi.protectionstones.utils.UUIDCache;
 import dev.espi.protectionstones.utils.WGUtils;
 import org.bukkit.*;
@@ -43,9 +39,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Furnace;
 import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -56,7 +50,6 @@ import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.FurnaceSmeltEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
-import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -64,7 +57,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.GrindstoneInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -76,17 +68,12 @@ public class ListenerClass implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
-
-        // update UUID cache
         UUIDCache.removeUUID(p.getUniqueId());
         UUIDCache.removeName(p.getName());
         UUIDCache.storeUUIDNamePair(p.getUniqueId(), p.getName());
 
         // allow worldguard to resolve all UUIDs to names
         Bukkit.getScheduler().runTaskAsynchronously(ProtectionStones.getInstance(), () -> UUIDCache.storeWGProfile(p.getUniqueId(), p.getName()));
-
-        // add recipes to player's recipe book
-        p.discoverRecipes(RecipeUtil.getRecipeKeys());
 
         PSPlayer psp = PSPlayer.fromPlayer(p);
 
@@ -112,71 +99,31 @@ public class ListenerClass implements Listener {
         }
     }
 
-    // specifically add WG passthrough bypass here, so other plugins can see the result
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockPlaceLowPriority(PlaceBlockEvent event) {
-        var cause = event.getCause().getRootCause();
-
-        if (cause instanceof Player player && event.getBlocks().size() >= 1) {
-            var block = event.getBlocks().get(0);
-            var options = ProtectionStones.getBlockOptions(block);
-
-            if (options != null && options.placingBypassesWGPassthrough) {
-                // check if any regions here have the passthrough flag
-                // we can't query unfortunately, since null flags seem to equate to ALLOW, when we want it to be DENY
-                ApplicableRegionSet set = WGUtils.getRegionManagerWithWorld(event.getWorld()).getApplicableRegions(BukkitAdapter.asBlockVector(block.getLocation()));
-
-                // loop through regions, if any region does not have passthrough = deny, then don't allow
-                for (var region : set.getRegions()) {
-                    if (region.getFlag(Flags.PASSTHROUGH) == null || region.getFlag(Flags.PASSTHROUGH) == StateFlag.State.DENY) {
-                        return;
-                    }
-                }
-
-                // if there was at least one region with passthrough = allow, then allow passthrough of protection block
-                if (!set.getRegions().isEmpty()) {
-                    event.setResult(Event.Result.ALLOW);
-                }
-            }
-        }
-    }
-
-    // we only create the region after other plugins' event handlers have run
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent e) {
         BlockHandler.createPSRegion(e);
     }
 
-    // returns the error message, or "" if the player has permission to break the region
-    // TODO: refactor and move this to PSRegion, so that /ps unclaim can use the same checks
-    private String checkPermissionToBreakProtection(Player p, PSRegion r) {
+    // helper method for breaking protection blocks
+    // IMPLEMENTATION NOTES: r may be not configured
+    private boolean playerBreakProtection(Player p, PSRegion r) {
+        PSProtectBlock blockOptions = r.getTypeOptions();
+
         // check for destroy permission
         if (!p.hasPermission("protectionstones.destroy")) {
-            return PSL.NO_PERMISSION_DESTROY.msg();
+            PSL.msg(p, PSL.NO_PERMISSION_DESTROY.msg());
+            return false;
         }
 
         // check if player is owner of region
         if (!r.isOwner(p.getUniqueId()) && !p.hasPermission("protectionstones.superowner")) {
-            return PSL.NO_REGION_PERMISSION.msg();
+            PSL.msg(p, PSL.NO_REGION_PERMISSION.msg());
+            return false;
         }
 
         // cannot break region being rented (prevents splitting merged regions, and breaking as tenant owner)
         if (r.getRentStage() == PSRegion.RentStage.RENTING && !p.hasPermission("protectionstones.superowner")) {
-            return PSL.RENT_CANNOT_BREAK_WHILE_RENTING.msg();
-        }
-
-        return "";
-    }
-
-    // helper method for breaking protection blocks
-    // IMPLEMENTATION NOTES: r may be of a non-configured type
-    private boolean playerBreakProtection(Player p, PSRegion r) {
-        PSProtectBlock blockOptions = r.getTypeOptions();
-
-        // check if player has permission to break the protection
-        String error = checkPermissionToBreakProtection(p, r);
-        if (!error.isEmpty()) {
-            PSL.msg(p, error);
+            PSL.msg(p, PSL.RENT_CANNOT_BREAK_WHILE_RENTING.msg());
             return false;
         }
 
@@ -336,26 +283,6 @@ public class ListenerClass implements Listener {
         }
     }
 
-    // this will be the first event handler called in the chain
-    // thus we should cancel the event here if possible (so other plugins don't start acting upon it)
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onBlockBreakLowPriority(BlockBreakEvent e) {
-        Player p = e.getPlayer();
-        Block pb = e.getBlock();
-
-        if (!ProtectionStones.isProtectBlock(pb)) return;
-
-        // check if player has permission to break the protection
-        PSRegion r = PSRegion.fromLocation(pb.getLocation());
-        if (r != null) {
-            String error = checkPermissionToBreakProtection(p, r);
-            if (!error.isEmpty()) {
-                PSL.msg(p, error);
-                e.setCancelled(true);
-            }
-        }
-    }
-
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
         Player p = e.getPlayer();
@@ -426,20 +353,6 @@ public class ListenerClass implements Listener {
             }
         }
     }
-
-
-    // -=-=-=- disable grindstone inventory to prevent infinite exp exploit with enchanted_effect option  -=-=-=-
-    // see https://github.com/espidev/ProtectionStones/issues/324
-
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onInventoryClickEvent(InventoryClickEvent e) {
-        if (e.getInventory().getType() == InventoryType.GRINDSTONE) {
-            if (ProtectionStones.isProtectBlockItem(e.getCurrentItem())) {
-                e.setCancelled(true);
-            }
-        }
-    }
-
 
     // -=-=-=- block changes to protection block related events -=-=-=-
 
@@ -548,12 +461,12 @@ public class ListenerClass implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent e) {
-        if (!ProtectionStones.isProtectBlock(e.getBlock())) return;
-
         // events like ender dragon block break, wither running into block break, etc.
-        if (!blockExplodeUtil(e.getBlock().getWorld(), e.getBlock())) {
-            // if block shouldn't be exploded, cancel the event
-            e.setCancelled(true);
+        if (ProtectionStones.isProtectBlock(e.getBlock())) {
+            if (!blockExplodeUtil(e.getBlock().getWorld(), e.getBlock())) {
+                // if block shouldn't be exploded, cancel the event
+                e.setCancelled(true);
+            }
         }
     }
 

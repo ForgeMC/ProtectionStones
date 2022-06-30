@@ -15,20 +15,18 @@
 
 package dev.espi.protectionstones.utils;
 
-import dev.espi.protectionstones.PSL;
-import dev.espi.protectionstones.PSRegion;
+import dev.espi.protectionstones.ProtectionStones;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 
-import java.util.List;
-
-public class ChatUtil {
-    public static void displayDuplicateRegionAliases(Player p, List<PSRegion> r) {
-        StringBuilder rep = new StringBuilder(r.get(0).getId() + " (" + r.get(0).getWorld().getName() + ")");
-
-        for (int i = 1; i < r.size(); i++) {
-            rep.append(String.format(", %s (%s)", r.get(i).getId(), r.get(i).getWorld().getName()));
+public class Particles {
+    public static void persistRedstoneParticle(Player p, Location l, Particle.DustOptions d, int occ) {
+        for (int i = 0; i < occ; i++) {
+            Bukkit.getScheduler().runTaskLater(ProtectionStones.getInstance(), () -> {
+                if (p.isOnline()) p.spawnParticle(Particle.REDSTONE, l, 1, d);
+            }, i*20);
         }
-
-        PSL.msg(p, PSL.SPECIFY_ID_INSTEAD_OF_ALIAS.msg().replace("%regions%", rep.toString()));
     }
 }

@@ -93,15 +93,13 @@ public class ArgFlag implements PSCommandArg {
                 Object fValue = r.getWGRegion().getFlag(f);
 
                 // check current flag's set group
-                String groupfValue = "all";
-                if (f.getRegionGroupFlag() != null && r.getWGRegion().getFlag(f.getRegionGroupFlag()) != null) {
-                    groupfValue = r.getWGRegion().getFlag(f.getRegionGroupFlag()).toString()
-                            .toLowerCase().replace("_", "");
-                }
+                String groupfValue = r.getWGRegion().getFlag(f.getRegionGroupFlag()) == null ? "all" : r.getWGRegion().getFlag(f.getRegionGroupFlag()).toString().
+                        toLowerCase().
+                        replace("_", "");
 
-                // add flag group if there is one set for the flag (for use in click commands)
+                // add flag group if there is one set for the flag(for use in click commands)
                 String flagGroup = "";
-                if (f.getRegionGroupFlag() != null && r.getWGRegion().getFlag(f.getRegionGroupFlag()) != null) {
+                if (r.getWGRegion().getFlag(f.getRegionGroupFlag()) != null) {
                     flagGroup = "-g " + groupfValue + " ";
                 }
 
@@ -360,11 +358,7 @@ public class ArgFlag implements PSCommandArg {
                 } else {
                     region.setFlag(flag, flag.getDefault());
                 }
-
-                if (flag.getRegionGroupFlag() != null) {
-                    region.setFlag(flag.getRegionGroupFlag(), null);
-                }
-
+                region.setFlag(flag.getRegionGroupFlag(), null);
                 PSL.msg(p, PSL.FLAG_SET.msg().replace("%flag%", flagName));
 
             } else if (value.equalsIgnoreCase("null") || value.equalsIgnoreCase("none")) { // null flag (remove)
@@ -378,17 +372,13 @@ public class ArgFlag implements PSCommandArg {
                 }
 
                 region.setFlag(flag, null);
-
-                if (flag.getRegionGroupFlag() != null) {
-                    region.setFlag(flag.getRegionGroupFlag(), null);
-                }
-
+                region.setFlag(flag.getRegionGroupFlag(), null);
                 PSL.msg(p, PSL.FLAG_SET.msg().replace("%flag%", flagName));
 
             } else { // custom set flag using WG internal
                 FlagContext fc = FlagContext.create().setInput(value).build();
                 region.setFlag(flag, flag.parseInput(fc));
-                if (!groupValue.equals("") && flag.getRegionGroupFlag() != null) {
+                if (!groupValue.equals("")) {
                     region.setFlag(flag.getRegionGroupFlag(), flag.getRegionGroupFlag().detectValue(groupValue));
                 }
                 PSL.msg(p, PSL.FLAG_SET.msg().replace("%flag%", flagName));

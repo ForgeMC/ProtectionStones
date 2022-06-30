@@ -17,10 +17,11 @@ package dev.espi.protectionstones.commands;
 
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import dev.espi.protectionstones.*;
-import dev.espi.protectionstones.utils.ParticlesUtil;
+import dev.espi.protectionstones.utils.Particles;
 import dev.espi.protectionstones.utils.RegionTraverse;
 import dev.espi.protectionstones.utils.WGUtils;
 import org.bukkit.*;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -139,8 +140,6 @@ public class ArgView implements PSCommandArg {
         return null;
     }
 
-    private static int PARTICLE_VIEW_DISTANCE_LIMIT = 150;
-
     private static boolean handlePinkParticle(Player p, Location l) {
         if (p.getLocation().distance(l) > 100 || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
         new ParticleBuilder(ParticleEffect.BLOCK_MARKER,l)
@@ -150,14 +149,30 @@ public class ArgView implements PSCommandArg {
     }
 
     private static boolean handleBlueParticle(Player p, Location l) {
-        if (p.getLocation().distance(l) > PARTICLE_VIEW_DISTANCE_LIMIT || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
-        ParticlesUtil.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(0, 255, 255), 2), 30);
+        if (p.getLocation().distance(l) > 60 || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
+        Particles.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(0, 255, 255), 2), 30);
         return true;
     }
 
     private static boolean handlePurpleParticle(Player p, Location l) {
-        if (p.getLocation().distance(l) > PARTICLE_VIEW_DISTANCE_LIMIT || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
-        ParticlesUtil.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(255, 0, 255), 10), 30);
+        if (p.getLocation().distance(l) > 60 || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
+        Particles.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(255, 0, 255), 10), 30);
         return true;
     }
+
+    /*
+    private static boolean handleFakeBlock(Player p, int x, int y, int z, BlockData tempBlock, List<Block> restore, long delay, long multiplier) {
+        if (p.getLocation().distance(new Location(p.getWorld(), x, y, z)) > 100 || Math.abs(y-p.getLocation().getY()) > 30) return false;
+
+        //Particles.persistRedstoneParticle(p, new Location(p.getWorld(), x, y, z), new Particle.DustOptions(Color.fromRGB(0, 127, 255), 1), 30);
+
+        Bukkit.getScheduler().runTaskLater(ProtectionStones.getInstance(), () -> {
+            //p.spawnParticle(Particle.REDSTONE, new Location(p.getWorld(), x, y, z), 50, new Particle.DustOptions(Color.fromRGB(0, 127, 255), 1));
+            if (p.getWorld().isChunkLoaded(x / 16, z / 16)) {
+                restore.add(p.getWorld().getBlockAt(x, y, z));
+                p.sendBlockChange(p.getWorld().getBlockAt(x, y, z).getLocation(), tempBlock);
+            }
+        }, delay * multiplier);
+        return true;
+    }*/
 }

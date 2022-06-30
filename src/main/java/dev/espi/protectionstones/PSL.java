@@ -16,6 +16,7 @@
 package dev.espi.protectionstones;
 
 import org.apache.commons.lang.StringUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -72,7 +73,6 @@ public enum PSL {
     NO_PERMISSION_TP("no_permission_tp", ChatColor.RED + "You do not have permission to teleport to other players' protection blocks."),
     NO_PERMISSION_HOME("no_permission_home", ChatColor.RED + "You do not have permission to teleport to your protection blocks."),
     NO_PERMISSION_UNCLAIM("no_permission_unclaim", ChatColor.RED + "You do not have permission to use the unclaim command."),
-    NO_PERMISSION_UNCLAIM_REMOTE("no_permission_unclaim_remote", ChatColor.RED + "You do not have permission to use the unclaim remote command."),
     NO_PERMISSION_VIEW("no_permission_view", ChatColor.RED + "You do not have permission to use the view command."),
     NO_PERMISSION_GIVE("no_permission_give", ChatColor.RED + "You do not have permission to use the give command."),
     NO_PERMISSION_GET("no_permission_get", ChatColor.RED + "You do not have permission to use the get command."),
@@ -259,8 +259,8 @@ public enum PSL {
     REGION_HELP_DESC("region.help_desc", "Use this command to find information or edit other players' (or your own) protected regions."),
     REGION_NOT_FOUND_FOR_PLAYER("region.not_found_for_player", ChatColor.GRAY + "No regions found for %player% in this world."),
     REGION_LIST("region.list", ChatColor.GRAY + "%player%'s regions in this world: " + ChatColor.AQUA + "%regions%"),
-    REGION_REMOVE("region.remove", ChatColor.YELLOW + "%player%'s regions have been removed in this world, and they have been removed from regions they co-owned."),
-    REGION_DISOWN("region.disown", ChatColor.YELLOW + "%player% has been removed as owner from all regions on this world."),
+    REGION_REMOVE("region.remove", ChatColor.YELLOW + "%player%'s regions have been removed in this world, and removed from regions %player% partially owned."),
+    REGION_DISOWN("region.remove", ChatColor.YELLOW + "%player% has been removed as owner from all regions on this world."),
     REGION_ERROR_SEARCH("region.error_search", ChatColor.RED + "Error while searching for %player%'s regions. Please make sure you have entered the correct name."),
 
     // ps tp
@@ -285,7 +285,6 @@ public enum PSL {
     // ps unclaim
     UNCLAIM_HELP("unclaim.help", ChatColor.AQUA + "> " + ChatColor.GRAY + "/ps unclaim"),
     UNCLAIM_HELP_DESC("unclaim.help_desc", "Use this command to pickup a placed protection stone and remove the region."),
-    UNCLAIM_HEADER("unclaim.header",ChatColor.DARK_GRAY + "" + ChatColor.STRIKETHROUGH + "=====" + ChatColor.RESET + " Unclaim (click to unclaim) " + ChatColor.DARK_GRAY + ChatColor.STRIKETHROUGH + "====="),
 
     // ps view
     VIEW_HELP("view.help", ChatColor.AQUA + "> " + ChatColor.GRAY + "/ps view"),
@@ -464,7 +463,6 @@ public enum PSL {
     public static void loadConfig() {
         YamlConfiguration yml = new YamlConfiguration();
 
-        // check if messages.yml exists
         if (!conf.exists()) {
             try {
                 conf.createNewFile();
@@ -473,17 +471,20 @@ public enum PSL {
             }
         }
 
-        // load config
         try {
             yml.load(conf); // can throw error
             for (PSL psl : PSL.values()) {
 
                 // fix message if need be
                 if (yml.getString(psl.path) == null) { // if msg not found in config
-                    yml.set(psl.path, applyConfigColours(psl.defaultMessage));
+                    yml.set(psl.path, psl.defaultMessage);
                 } else {
-                    // perform message upgrades
-                    messageUpgrades(psl, yml);
+                    // psl upgrade conversions
+                    if (psl == PSL.REACHED_REGION_LIMIT && yml.getString(psl.path).equals("&cYou can not create any more protected regions.")) {
+                        yml.set(psl.path, psl.defaultMessage);
+                    } else if (psl == PSL.REACHED_PER_BLOCK_REGION_LIMIT && yml.getString(psl.path).equals("&cYou can not create any more regions of this type.")) {
+                        yml.set(psl.path, psl.defaultMessage);
+                    }
                 }
 
                 // load message
@@ -497,21 +498,6 @@ public enum PSL {
             }
         } catch (Exception e) { // prevent bad messages.yml file from resetting the file
             e.printStackTrace();
-        }
-    }
-
-    // message upgrades over time
-    private static void messageUpgrades(PSL psl, YamlConfiguration yml) {
-        String value = yml.getString(psl.path);
-        assert(value != null);
-
-        // psl upgrade conversions
-        if (psl == PSL.REACHED_REGION_LIMIT && value.equals("&cYou can not create any more protected regions.")) {
-            yml.set(psl.path, psl.defaultMessage);
-        } else if (psl == PSL.REACHED_PER_BLOCK_REGION_LIMIT && value.equals("&cYou can not create any more regions of this type.")) {
-            yml.set(psl.path, psl.defaultMessage);
-        } else if (value.contains("§")) {
-            yml.set(psl.path, applyConfigColours(value));
         }
     }
 
@@ -534,9 +520,5 @@ public enum PSL {
         }
 
         return msg.replace('&', '§');
-    }
-
-    private static String applyConfigColours(String msg) {
-        return msg.replace('§', '&');
     }
 }

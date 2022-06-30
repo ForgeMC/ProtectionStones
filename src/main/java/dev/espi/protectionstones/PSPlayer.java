@@ -19,6 +19,9 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.utils.MiscUtil;
 import dev.espi.protectionstones.utils.WGUtils;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.model.user.UserManager;
+import net.luckperms.api.node.Node;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -213,8 +216,10 @@ public class PSPlayer {
             permissions = getOfflinePlayer().getPlayer().getEffectivePermissions().stream().map(PermissionAttachmentInfo::getPermission).collect(Collectors.toList());
         } else if (ProtectionStones.getInstance().isLuckPermsSupportEnabled()) {
             // use luckperms to obtain all of an offline player's permissions (vault and spigot api are unable to do this)
+            UserManager userManager = ProtectionStones.getInstance().getLuckPerms().getUserManager();
             try {
-                permissions = MiscUtil.getLuckPermsUserPermissions(getUuid());
+                User user = userManager.loadUser(getUuid()).get();
+                permissions = user.getNodes().stream().filter(Node::getValue).map(Node::getKey).collect(Collectors.toList());
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
                 throw new CannotAccessOfflinePlayerPermissionsException();
@@ -251,9 +256,10 @@ public class PSPlayer {
             return MiscUtil.getPermissionNumber(getPlayer(), "protectionstones.limit.", -1);
         } else if (ProtectionStones.getInstance().isLuckPermsSupportEnabled()) {
             // use LuckPerms to obtain all of an offline player's permissions (vault and spigot api are unable to do this)
+            UserManager userManager = ProtectionStones.getInstance().getLuckPerms().getUserManager();
             try {
-                List<String> permissions = MiscUtil.getLuckPermsUserPermissions(getUuid());
-                return MiscUtil.getPermissionNumber(permissions, "protectionstones.limit.", -1);
+                User user = userManager.loadUser(getUuid()).get();
+                return MiscUtil.getPermissionNumber(user.getNodes().stream().filter(Node::getValue).map(Node::getKey).collect(Collectors.toList()), "protectionstones.limit.", -1);
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
                 throw new CannotAccessOfflinePlayerPermissionsException();
