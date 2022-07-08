@@ -703,8 +703,6 @@ public class ProtectionStones extends JavaPlugin {
 
         getLogger().info(ChatColor.WHITE + "ProtectionStones has successfully started!");
         ArgView.startDisplayBordersTask();
-
-        this.getCommand("grant_plot").setExecutor(new GrantPlotsCommand());
     }
 
     @Override
