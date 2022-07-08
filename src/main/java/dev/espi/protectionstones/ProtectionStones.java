@@ -20,6 +20,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import dev.espi.protectionstones.FMCDommands.GrantPlotsCommand;
 import dev.espi.protectionstones.commands.ArgHelp;
 import dev.espi.protectionstones.commands.ArgView;
 import dev.espi.protectionstones.commands.PSCommandArg;
@@ -702,6 +703,8 @@ public class ProtectionStones extends JavaPlugin {
 
         getLogger().info(ChatColor.WHITE + "ProtectionStones has successfully started!");
         ArgView.startDisplayBordersTask();
+
+        this.getCommand("grant_plot").setExecutor(new GrantPlotsCommand());
     }
 
     @Override

@@ -1,10 +1,10 @@
 package dev.espi.protectionstones.gui;
 
 public enum GuiCategory {
-    HOME("Claim Manager - Home", 9),
-    SETTINGS("Claim Manager - Settings", 18),
-    MEMBERS("Claim Manager - Members", 54),
-    DELETE_CONFIRM("Are you sure?", 27);
+    HOME("Menu Działki", 9),
+    SETTINGS("Ustawienia Działki", 18),
+    MEMBERS("Dodani Gracze", 54),
+    DELETE_CONFIRM("Potwierdź swoją decyzję", 27);
 
     private String guiName;
     private int guiSize;

@@ -24,9 +24,6 @@ import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-import xyz.xenondevs.particle.ParticleBuilder;
-import xyz.xenondevs.particle.ParticleEffect;
-import xyz.xenondevs.particle.data.texture.BlockTexture;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,31 +35,26 @@ public class ArgView implements PSCommandArg {
     private static List<UUID> cooldown = new ArrayList<>();
 
     public static void startDisplayBordersTask(){
-        Bukkit.getScheduler().scheduleAsyncRepeatingTask(
-                ProtectionStones.getInstance(),
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        List<Location> locToRemove;
-                        for (UUID uuid: visualisedRegions.keySet()){
-                            Player player = Bukkit.getServer().getPlayer(uuid);
-                            if (player == null) continue;
-                            locToRemove = new ArrayList<>();
-                            for (Location regionHome: visualisedRegions.getOrDefault(uuid, Collections.emptyList())){
-                                PSRegion r = PSRegion.fromLocation(regionHome);
-                                if (r == null || !regionHome.getWorld().equals(player.getWorld())){
-                                    locToRemove.add(regionHome);
-                                    continue;
-                                }
-                                displayBordersForPlayer(player, r);
-                            }
-                            visualisedRegions.get(uuid).removeAll(locToRemove);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                List<Location> locToRemove;
+                for (UUID uuid : visualisedRegions.keySet()) {
+                    Player player = Bukkit.getServer().getPlayer(uuid);
+                    if (player == null) continue;
+                    locToRemove = new ArrayList<>();
+                    for (Location regionHome : visualisedRegions.getOrDefault(uuid, Collections.emptyList())) {
+                        PSRegion r = PSRegion.fromLocation(regionHome);
+                        if (r == null || !regionHome.getWorld().equals(player.getWorld())) {
+                            locToRemove.add(regionHome);
+                            continue;
                         }
+                        displayBordersForPlayer(player, r);
                     }
-                },
-                0L,
-                2L
-        );
+                    visualisedRegions.get(uuid).removeAll(locToRemove);
+                }
+            }
+        }.runTaskTimerAsynchronously(ProtectionStones.getInstance(), 0L, 2L);
     }
 
     private static void displayBordersForPlayer(Player p, PSRegion r){
@@ -72,10 +64,15 @@ public class ArgView implements PSCommandArg {
         int minY = r.getWGRegion().getMinimumPoint().getBlockY(), maxY = r.getWGRegion().getMaximumPoint().getBlockY();
 
         RegionTraverse.traverseRegionEdge(new HashSet<>(r.getWGRegion().getPoints()), Collections.singletonList(r.getWGRegion()), tr -> {
-            handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+playerY, 0.5+tr.point.getZ()));
-            handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+minY, 0.5+tr.point.getZ()));
-            handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+maxY, 0.5+tr.point.getZ()));
+            handleBarrierParticle(p, new Location(p.getWorld(), 0.5 + tr.point.getX(), 0.5 + playerY, 0.5 + tr.point.getZ()));
+            handleBarrierParticle(p, new Location(p.getWorld(), 0.5 + tr.point.getX(), 0.5 + minY, 0.5 + tr.point.getZ()));
+            handleBarrierParticle(p, new Location(p.getWorld(), 0.5 + tr.point.getX(), 0.5 + maxY, 0.5 + tr.point.getZ()));
         });
+
+        handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + r.getProtectBlock().getX(), 1.5 + r.getProtectBlock().getY(), 0.5 + r.getProtectBlock().getZ()));
+        for (int y = minY; y <= maxY; y += 10) {
+            handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + r.getProtectBlock().getX(), 0.5 + y, 0.5 + r.getProtectBlock().getZ()));
+        }
     }
 
     @Override
@@ -121,11 +118,11 @@ public class ArgView implements PSCommandArg {
             PSL.msg(p, PSL.VIEW_COOLDOWN.msg());
             return true;
         }
-        if (visualisedRegions.getOrDefault(p.getUniqueId(), Collections.emptyList()).contains(r.getHome())){
+        if (visualisedRegions.getOrDefault(p.getUniqueId(), Collections.emptyList()).contains(r.getHome())) {
             visualisedRegions.get(p.getUniqueId()).remove(r.getHome());
             return true;
         }
-        if (!visualisedRegions.containsKey(p.getUniqueId())){
+        if (!visualisedRegions.containsKey(p.getUniqueId())) {
             visualisedRegions.put(p.getUniqueId(), new ArrayList<>());
         }
         visualisedRegions.get(p.getUniqueId()).add(r.getHome());
@@ -133,48 +130,10 @@ public class ArgView implements PSCommandArg {
         PSL.msg(p, PSL.VIEW_GENERATING.msg());
 
         // add player to cooldown
-        cooldown.add(p.getUniqueId());
-        Bukkit.getScheduler().runTaskLaterAsynchronously(ProtectionStones.getInstance(), () -> cooldown.remove(p.getUniqueId()), 20 * ProtectionStones.getInstance().getConfigOptions().psViewCooldown);
+        //cooldown.add(p.getUniqueId());
+        //Bukkit.getScheduler().runTaskLaterAsynchronously(ProtectionStones.getInstance(), () -> cooldown.remove(p.getUniqueId()), 20 * ProtectionStones.getInstance().getConfigOptions().psViewCooldown);
 
         int playerY = p.getLocation().getBlockY(), minY = r.getWGRegion().getMinimumPoint().getBlockY(), maxY = r.getWGRegion().getMaximumPoint().getBlockY();
-
-        // send particles to client
-
-        Bukkit.getScheduler().runTaskAsynchronously(ProtectionStones.getInstance(), () -> {
-
-            AtomicInteger modU = new AtomicInteger(0);
-
-            if (r instanceof PSGroupRegion) {
-                PSGroupRegion pr = (PSGroupRegion) r;
-                for (PSMergedRegion psmr : pr.getMergedRegions()) {
-                    handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + psmr.getProtectBlock().getX(), 1.5 + psmr.getProtectBlock().getY(), 0.5 + psmr.getProtectBlock().getZ()));
-                    for (int y = minY; y <= maxY; y += 10) {
-                        handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + psmr.getProtectBlock().getX(), 0.5 + y, 0.5 + psmr.getProtectBlock().getZ()));
-                    }
-                }
-            } else {
-                handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + r.getProtectBlock().getX(), 1.5 + r.getProtectBlock().getY(), 0.5 + r.getProtectBlock().getZ()));
-                for (int y = minY; y <= maxY; y += 10) {
-                    handlePurpleParticle(p, new Location(p.getWorld(), 0.5 + r.getProtectBlock().getX(), 0.5 + y, 0.5 + r.getProtectBlock().getZ()));
-                }
-            }
-
-            RegionTraverse.traverseRegionEdge(new HashSet<>(r.getWGRegion().getPoints()), Collections.singletonList(r.getWGRegion()), tr -> {
-                if (tr.isVertex) {
-                    handleBlueParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+playerY, 0.5+tr.point.getZ()));
-                    for (int y = minY; y <= maxY; y += 5) {
-                        handleBlueParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+y, 0.5+tr.point.getZ()));
-                    }
-                } else {
-                    if (modU.get() % 2 == 0) {
-                        handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+playerY, 0.5+tr.point.getZ()));
-                        handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+minY, 0.5+tr.point.getZ()));
-                        handlePinkParticle(p, new Location(p.getWorld(), 0.5+tr.point.getX(), 0.5+maxY, 0.5+tr.point.getZ()));
-                    }
-                    modU.set((modU.get() + 1) % 2);
-                }
-            });
-        });
         return true;
     }
 
@@ -183,25 +142,25 @@ public class ArgView implements PSCommandArg {
         return null;
     }
 
-    private static int PARTICLE_VIEW_DISTANCE_LIMIT = 150;
+    private static final int PARTICLE_VIEW_DISTANCE_LIMIT = 150;
 
-    private static boolean handlePinkParticle(Player p, Location l) {
-        if (p.getLocation().distance(l) > 100 || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
-        new ParticleBuilder(ParticleEffect.BLOCK_MARKER,l)
-                .setParticleData(new BlockTexture(Material.BARRIER)).setSpeed(2F)
-                .display(p);
+    private static boolean handleBarrierParticle(Player p, Location l) {
+        if (p.getLocation().distance(l) > PARTICLE_VIEW_DISTANCE_LIMIT || Math.abs(l.getY() - p.getLocation().getY()) > 30)
+            return false;
+        p.spawnParticle(Particle.BLOCK_MARKER, l, 1, 0, 0, 0, 0, Material.BARRIER.createBlockData());
         return true;
     }
 
     private static boolean handleBlueParticle(Player p, Location l) {
-        if (p.getLocation().distance(l) > PARTICLE_VIEW_DISTANCE_LIMIT || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
+        if (p.getLocation().distance(l) > PARTICLE_VIEW_DISTANCE_LIMIT || Math.abs(l.getY() - p.getLocation().getY()) > 30)
+            return false;
         ParticlesUtil.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(0, 255, 255), 2), 30);
         return true;
     }
 
     private static boolean handlePurpleParticle(Player p, Location l) {
         if (p.getLocation().distance(l) > PARTICLE_VIEW_DISTANCE_LIMIT || Math.abs(l.getY()-p.getLocation().getY()) > 30) return false;
-        ParticlesUtil.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(255, 0, 255), 10), 30);
+        ParticlesUtil.persistRedstoneParticle(p, l, new Particle.DustOptions(Color.fromRGB(255, 0, 255), 1), 30);
         return true;
     }
 }

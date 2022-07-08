@@ -224,8 +224,7 @@ public class ListenerClass implements Listener {
                 }
             }
             Player player = e.getPlayer();
-            // opening gui; currently work in progress; todo
-            //GUIScreen.openGUI(player, r, GuiCategory.HOME);
+            GUIScreen.openGUI(player, r, GuiCategory.HOME);
         }
     }
 
@@ -269,42 +268,49 @@ public class ListenerClass implements Listener {
             }
         }
         else if (event.getView().getTitle().equals(GuiCategory.SETTINGS.getGuiName())) {
-            if (clicked == null){
+            if (clicked == null) {
                 event.setCancelled(true);
                 return;
             }
             ProtectedRegion wgRegion = r.getWGRegion();
             if (clicked.getType() == Material.RED_BED) {
-                GUIScreen.openGUI(player, r,GuiCategory.HOME);
+                GUIScreen.openGUI(player, r, GuiCategory.HOME);
                 return;
             }
-            if (clicked.getType() == Material.BRICK) {
-                wgRegion.setFlag(Flags.BUILD, wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
-                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BRICK, 1, (short)0, wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW), "§eBuilding", wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            }
-            else if (clicked.getType() == Material.REDSTONE) {
-                wgRegion.setFlag(Flags.INTERACT, wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
-                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.REDSTONE, 1, (short)0, wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW), "§eBuilding", wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            }
-            else if (clicked.getType() == Material.ROTTEN_FLESH) {
-                wgRegion.setFlag(Flags.MOB_DAMAGE, wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
-                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ROTTEN_FLESH, 1, (short)0, wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW), "§eHostile mobs hitting", wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            }
-            else if (clicked.getType() == Material.BEEF) {
-                wgRegion.setFlag(Flags.DAMAGE_ANIMALS, wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
-                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BEEF, 1, (short)0, wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW), "§ePassive mobs hitting", wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            }
-            else if (clicked.getType() == Material.TNT) {
-                wgRegion.setFlag(Flags.TNT, wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
-                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.TNT, 1, (short)0, wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW), "§eTNT igniting", wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            }
-            else if (clicked.getType() == Material.IRON_SWORD) {
+            if (clicked.getType() == Material.OAK_STAIRS) {
+                Flag sitFlag = WorldGuard.getInstance().getFlagRegistry().get("sit");
+                wgRegion.setFlag(sitFlag, wgRegion.getFlag(sitFlag).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.OAK_STAIRS, 1, (short) 0, wgRegion.getFlag(sitFlag).equals(StateFlag.State.ALLOW), "§eSiadanie", wgRegion.getFlag(sitFlag).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.ACACIA_SIGN) {
+                wgRegion.setFlag((Flag) Flags.GREET_MESSAGE, wgRegion.getFlag(Flags.GREET_MESSAGE).equals("") ? "§bgreeting witaj na działce gracza %name%" : "");
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ACACIA_SIGN, 1, (short) 0, !wgRegion.getFlag(Flags.GREET_MESSAGE).equals(""), "§eWiadomość powitalna", !wgRegion.getFlag(Flags.GREET_MESSAGE).equals("") ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.CHEST) {
+                wgRegion.setFlag(Flags.CHEST_ACCESS, wgRegion.getFlag(Flags.CHEST_ACCESS).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.CHEST, 1, (short) 0, wgRegion.getFlag(Flags.CHEST_ACCESS).equals(StateFlag.State.ALLOW), "§eDostęp do skrzynek", wgRegion.getFlag(Flags.CHEST_ACCESS).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.ICE) {
+                wgRegion.setFlag(Flags.ICE_FORM, wgRegion.getFlag(Flags.ICE_FORM).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ICE, 1, (short) 0, wgRegion.getFlag(Flags.ICE_FORM).equals(StateFlag.State.ALLOW), "§eFormowanie się lodu", wgRegion.getFlag(Flags.ICE_FORM).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.SNOW) {
+                wgRegion.setFlag(Flags.SNOW_FALL, wgRegion.getFlag(Flags.SNOW_FALL).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.SNOW, 1, (short) 0, wgRegion.getFlag(Flags.SNOW_FALL).equals(StateFlag.State.ALLOW), "§ePadający śnieg", wgRegion.getFlag(Flags.SNOW_FALL).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.IRON_SWORD) {
                 wgRegion.setFlag(Flags.PVP, wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
-                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.IRON_SWORD, 1, (short)0, wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW), "§ePVP", wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            }
-            else if (clicked.getType() == Material.ENDER_PEARL) {
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.IRON_SWORD, 1, (short) 0, wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW), "§ePVP", wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.ENDER_PEARL) {
                 wgRegion.setFlag(Flags.ENDERPEARL, wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
-                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ENDER_PEARL, 1, (short)0, wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW), "§eTeleport", wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.ENDER_PEARL, 1, (short) 0, wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW), "§eTeleport", wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.BIG_DRIPLEAF) {
+                wgRegion.setFlag(Flags.USE_DRIPLEAF, wgRegion.getFlag(Flags.USE_DRIPLEAF).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BIG_DRIPLEAF, 1, (short) 0, wgRegion.getFlag(Flags.USE_DRIPLEAF).equals(StateFlag.State.ALLOW), "§eUżywanie spadkoliści (xd?)", wgRegion.getFlag(Flags.USE_DRIPLEAF).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.BEETROOT_SEEDS) {
+                wgRegion.setFlag(Flags.CROP_GROWTH, wgRegion.getFlag(Flags.CROP_GROWTH).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.BEETROOT_SEEDS, 1, (short) 0, wgRegion.getFlag(Flags.CROP_GROWTH).equals(StateFlag.State.ALLOW), "§eRosnące uprawy", wgRegion.getFlag(Flags.CROP_GROWTH).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.VINE) {
+                wgRegion.setFlag(Flags.VINE_GROWTH, wgRegion.getFlag(Flags.VINE_GROWTH).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.VINE, 1, (short) 0, wgRegion.getFlag(Flags.VINE_GROWTH).equals(StateFlag.State.ALLOW), "§eRosnące pnącza", wgRegion.getFlag(Flags.VINE_GROWTH).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            } else if (clicked.getType() == Material.CHORUS_FRUIT) {
+                wgRegion.setFlag(Flags.CHORUS_TELEPORT, wgRegion.getFlag(Flags.CHORUS_TELEPORT).equals(StateFlag.State.ALLOW) ? StateFlag.State.DENY : StateFlag.State.ALLOW);
+                menu.setItem(event.getRawSlot(), FMCTools.formatItem(Material.CHORUS_FRUIT, 1, (short) 0, wgRegion.getFlag(Flags.CHORUS_TELEPORT).equals(StateFlag.State.ALLOW), "§eUżywanie owoców refrenu", wgRegion.getFlag(Flags.CHORUS_TELEPORT).equals(StateFlag.State.ALLOW) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
             }
         }
         else if (event.getView().getTitle().equals(GuiCategory.MEMBERS.getGuiName())) {

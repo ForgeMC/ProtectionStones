@@ -16,12 +16,15 @@
 package dev.espi.protectionstones.gui;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.PSRegion;
 import dev.espi.protectionstones.commands.ArgView;
 import dev.espi.protectionstones.utils.FMCTools;
+import dev.geco.gsit.GSitMain;
+import dev.geco.gsit.api.GSitAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -41,58 +44,80 @@ public class GUIScreen {
     public static void openGUI(Player player, PSRegion psRegion, GuiCategory category){
         final Inventory menu = Bukkit.createInventory(player, category.getGuiSize(), category.getGuiName());
         if (category == GuiCategory.HOME) {
-            menu.setItem(0, FMCTools.formatItem(Material.ENDER_EYE, 1, (short)0, false, "§aOverview", Arrays.asList("§7Nazwa: §f" + psRegion.getName())));
-            menu.setItem(1, FMCTools.formatItem(Material.REDSTONE, 1, (short)0, false, "§aSettings", Arrays.asList("§7Manage your claim settings", "§7like Build, PVP, ...")));
-            menu.setItem(2, FMCTools.formatItem(Material.PLAYER_HEAD, 1, (short)0, false, "§aMembers", Arrays.asList("§7View and edit your", "§7claim members.")));
-            menu.setItem(3, FMCTools.formatItem(Material.ITEM_FRAME, 1, (short)0, false, "§aVisualize", ArgView.visualisedRegions.getOrDefault(player.getUniqueId(), Collections.emptyList()).contains(PSRegion.fromLocation(player.getLocation()).getHome()) ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(4, FMCTools.formatItem(Material.TNT, 1, (short)0, false, "§c§lRemove", Arrays.asList("§7Removes this claim", "§cWarning! §7It can't be undone.")));
-            menu.setItem(8, FMCTools.formatItem(Material.BARRIER, 1, (short)0, false, "§cClose", null));
+            menu.setItem(0, FMCTools.formatItem(Material.ENDER_EYE, 1, (short) 0, false, "§aDziałka", Arrays.asList("§7Nazwa: §f" + psRegion.getName())));
+            menu.setItem(1, FMCTools.formatItem(Material.REDSTONE, 1, (short) 0, false, "§aFlagi", Arrays.asList("§7Ustawisz tutaj flagi ", "§7np. Build, PVP, ...")));
+            menu.setItem(2, FMCTools.formatItem(Material.PLAYER_HEAD, 1, (short) 0, false, "§aGracze", Arrays.asList("§7Zarządzaj", "§7dodanymi graczami.")));
+            menu.setItem(3, FMCTools.formatItem(Material.ITEM_FRAME, 1, (short) 0, false, "§aZwizualizuj Działkę", ArgView.visualisedRegions.getOrDefault(player.getUniqueId(), Collections.emptyList()).contains(PSRegion.fromLocation(player.getLocation()).getHome()) ? Arrays.asList("§aWłączone") : Arrays.asList("§cWyłączone")));
+            menu.setItem(4, FMCTools.formatItem(Material.TNT, 1, (short) 0, false, "§c§lUsuń Działkę", Arrays.asList("§7Usuwa działkę.", "§cOstrożnie!")));
+            menu.setItem(8, FMCTools.formatItem(Material.BARRIER, 1, (short) 0, false, "§cWyjdź", null));
         }
         else if (category == GuiCategory.SETTINGS) {
-            Boolean setting_build = false,
-                    setting_interact = false,
-                    setting_mobs_hostile = false,
-                    setting_mobs_passive = false,
-                    setting_tnt = false,
-                    setting_pvp = false,
-                    setting_teleport = false;
+            boolean setting_pvp = false,
+                    setting_enderpearl = false,
+                    setting_greet = false,
+                    setting_sitting = false,
+                    setting_chest_access = false,
+                    setting_chorus_fruit = false,
+                    setting_ice_form = true,
+                    setting_snow_fall = true,
+                    setting_use_dripleaf = true,
+                    setting_crops_growth = true,
+                    setting_vine_growth = true;
 
             ProtectedRegion wgRegion = psRegion.getWGRegion();
             try {
-                if (wgRegion.getFlag(Flags.BUILD).equals(StateFlag.State.ALLOW)) {
-                    setting_build = true;
+                if (wgRegion.getFlag(Flags.USE_DRIPLEAF).equals(StateFlag.State.DENY)) {
+                    setting_use_dripleaf = false;
                 }
-                if (wgRegion.getFlag(Flags.INTERACT).equals(StateFlag.State.ALLOW)) {
-                    setting_interact = true;
+                if (wgRegion.getFlag(Flags.CHEST_ACCESS).equals(StateFlag.State.ALLOW)) {
+                    setting_chest_access = true;
                 }
-                if (wgRegion.getFlag(Flags.MOB_DAMAGE).equals(StateFlag.State.ALLOW)) {
-                    setting_mobs_hostile = true;
+                if (wgRegion.getFlag(Flags.CHORUS_TELEPORT).equals(StateFlag.State.ALLOW)) {
+                    setting_chorus_fruit = true;
                 }
-                if (wgRegion.getFlag(Flags.DAMAGE_ANIMALS).equals(StateFlag.State.ALLOW)) {
-                    setting_mobs_passive = true;
+                if (wgRegion.getFlag(Flags.ICE_FORM).equals(StateFlag.State.DENY)) {
+                    setting_ice_form = false;
                 }
-                if (wgRegion.getFlag(Flags.TNT).equals(StateFlag.State.ALLOW)) {
-                    setting_tnt = true;
+                if (wgRegion.getFlag(Flags.SNOW_FALL).equals(StateFlag.State.DENY)) {
+                    setting_snow_fall = false;
                 }
                 if (wgRegion.getFlag(Flags.PVP).equals(StateFlag.State.ALLOW)) {
                     setting_pvp = true;
                 }
                 if (wgRegion.getFlag(Flags.ENDERPEARL).equals(StateFlag.State.ALLOW)) {
-                    setting_teleport = true;
+                    setting_enderpearl = true;
+                }
+                if (wgRegion.getFlag(Flags.CHORUS_TELEPORT).equals(StateFlag.State.ALLOW)) {
+                    setting_chorus_fruit = true;
+                }
+                if (wgRegion.getFlag(Flags.CROP_GROWTH).equals(StateFlag.State.DENY)) {
+                    setting_crops_growth = false;
+                }
+                if (wgRegion.getFlag(Flags.VINE_GROWTH).equals(StateFlag.State.DENY)) {
+                    setting_vine_growth = false;
+                }
+                setting_greet = wgRegion.getFlag(Flags.GREET_MESSAGE) != null && !wgRegion.getFlag(Flags.GREET_MESSAGE).equals("");
+                if (wgRegion.getFlag(WorldGuard.getInstance().getFlagRegistry().get("sit")).equals(StateFlag.State.ALLOW)) {
+                    setting_sitting = true;
                 }
             } catch (NullPointerException e) {
                 Bukkit.getLogger().warning("dzialka " + wgRegion.getId() + " nie posiada odpowiednich flag!");
                 return; // return if invalid
             }
-            // todo: część flag nie działa :(
-            menu.setItem(0, FMCTools.formatItem(Material.BRICK, 1, (short)0, setting_build, "§eBuilding", setting_build ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(1, FMCTools.formatItem(Material.REDSTONE, 1, (short)0, setting_interact, "§eInteracting", setting_interact ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(2, FMCTools.formatItem(Material.ROTTEN_FLESH, 1, (short)0, setting_mobs_hostile, "§eHostile mobs hitting", setting_mobs_hostile ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(3, FMCTools.formatItem(Material.BEEF, 1, (short)0, setting_mobs_passive, "§ePassive mobs hitting", setting_mobs_passive ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(4, FMCTools.formatItem(Material.TNT, 1, (short)0, setting_tnt, "§eTNT igniting", setting_tnt ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(5, FMCTools.formatItem(Material.IRON_SWORD, 1, (short)0, setting_pvp, "§ePVP", setting_pvp ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(6, FMCTools.formatItem(Material.ENDER_PEARL, 1, (short)0, setting_teleport, "§eTeleport", setting_teleport ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
-            menu.setItem(8, FMCTools.formatItem(Material.RED_BED, 1, (short)0, false, "§cReturn to home", null));
+            menu.setItem(0, FMCTools.formatItem(Material.OAK_STAIRS, 1, (short) 0, setting_sitting, "§eSiadanie", setting_sitting ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            menu.setItem(1, FMCTools.formatItem(Material.ACACIA_SIGN, 1, (short) 0, setting_greet, "§eWiadomość Powitalna", setting_greet ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+            if (player.hasPermission("protectionstones.premium_flags")) {
+                menu.setItem(2, FMCTools.formatItem(Material.CHEST, 1, (short) 0, setting_chest_access, "§eDostęp do skrzynek", setting_chest_access ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(3, FMCTools.formatItem(Material.ICE, 1, (short) 0, setting_ice_form, "§eFormowanie się lodu", setting_ice_form ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(4, FMCTools.formatItem(Material.SNOW, 1, (short) 0, setting_snow_fall, "§ePadający śnieg", setting_snow_fall ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(5, FMCTools.formatItem(Material.IRON_SWORD, 1, (short) 0, setting_pvp, "§ePVP", setting_pvp ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(6, FMCTools.formatItem(Material.ENDER_PEARL, 1, (short) 0, setting_enderpearl, "§eTeleport", setting_enderpearl ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(7, FMCTools.formatItem(Material.BIG_DRIPLEAF, 1, (short) 0, setting_use_dripleaf, "§eUżywanie spadkoliści (xd?)", setting_use_dripleaf ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(8, FMCTools.formatItem(Material.BEETROOT_SEEDS, 1, (short) 0, setting_crops_growth, "§eRosnące uprawy", setting_crops_growth ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(9, FMCTools.formatItem(Material.VINE, 1, (short) 0, setting_vine_growth, "§eRosnące pnącza", setting_vine_growth ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(9, FMCTools.formatItem(Material.CHORUS_FRUIT, 1, (short) 0, setting_chorus_fruit, "§eUżywanie owoców refrenu", setting_chorus_fruit ? Arrays.asList("§aEnabled") : Arrays.asList("§cDisabled")));
+                menu.setItem(17, FMCTools.formatItem(Material.RED_BED, 1, (short) 0, false, "§cReturn to home", null));
+            }
 
         }
         else if (category == GuiCategory.MEMBERS) {
