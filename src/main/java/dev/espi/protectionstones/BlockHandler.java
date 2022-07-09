@@ -203,15 +203,27 @@ public class BlockHandler {
     }
 
     public static int getAmountPermissionPlots(Player player){
-        int amountOfHeals = 0;
+        int limitM = 0, limitQ = 0, limitR = 0;
         for(PermissionAttachmentInfo perm: player.getEffectivePermissions()){
             String permString = perm.getPermission();
-            if(permString.startsWith("fmc.dzialki.")){
+            if (permString.startsWith("fmc.dzialki.m.")){
                 String[] amount = permString.split("\\.");
-                amountOfHeals += Integer.parseInt(amount[2]);
+                if (Integer.parseInt(amount[3]) > limitM){
+                    limitM = Integer.parseInt(amount[3]);
+                }
+            } else if (permString.startsWith("fmc.dzialki.q.")){
+                String[] amount = permString.split("\\.");
+                if (Integer.parseInt(amount[3]) > limitQ){
+                    limitQ = Integer.parseInt(amount[3]);
+                }
+            } else if (permString.startsWith("fmc.dzialki.r.")){
+                String[] amount = permString.split("\\.");
+                if (Integer.parseInt(amount[3]) > limitR){
+                    limitR = Integer.parseInt(amount[3]);
+                }
             }
         }
-        return amountOfHeals;
+        return limitM + limitQ + limitR;
     }
 
     // create the actual WG region for PS region

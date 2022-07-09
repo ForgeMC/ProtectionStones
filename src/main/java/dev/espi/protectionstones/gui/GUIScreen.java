@@ -23,8 +23,6 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dev.espi.protectionstones.PSRegion;
 import dev.espi.protectionstones.commands.ArgView;
 import dev.espi.protectionstones.utils.FMCTools;
-import dev.geco.gsit.GSitMain;
-import dev.geco.gsit.api.GSitAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
