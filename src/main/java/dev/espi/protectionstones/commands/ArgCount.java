@@ -20,10 +20,13 @@ import dev.espi.protectionstones.PSL;
 import dev.espi.protectionstones.PSPlayer;
 import dev.espi.protectionstones.ProtectionStones;
 import dev.espi.protectionstones.utils.UUIDCache;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 
 import java.util.*;
 
@@ -42,6 +45,30 @@ public class ArgCount implements PSCommandArg {
         });
 
         return count;
+    }
+
+    public static int getAmountPermissionPlots(Player player){
+        int limitM = 0, limitQ = 0, limitR = 0;
+        for(PermissionAttachmentInfo perm: player.getEffectivePermissions()){
+            String permString = perm.getPermission();
+            if (permString.startsWith("fmc.dzialki.m.")){
+                String[] amount = permString.split("\\.");
+                if (Integer.parseInt(amount[3]) > limitM){
+                    limitM = Integer.parseInt(amount[3]);
+                }
+            } else if (permString.startsWith("fmc.dzialki.q.")){
+                String[] amount = permString.split("\\.");
+                if (Integer.parseInt(amount[3]) > limitQ){
+                    limitQ = Integer.parseInt(amount[3]);
+                }
+            } else if (permString.startsWith("fmc.dzialki.r.")){
+                String[] amount = permString.split("\\.");
+                if (Integer.parseInt(amount[3]) > limitR){
+                    limitR = Integer.parseInt(amount[3]);
+                }
+            }
+        }
+        return limitM + limitQ + limitR;
     }
 
     @Override
@@ -69,7 +96,7 @@ public class ArgCount implements PSCommandArg {
     public boolean executeArgument(CommandSender s, String[] args, HashMap<String, String> flags) {
         Player p = (Player) s;
         Bukkit.getScheduler().runTaskAsynchronously(ProtectionStones.getInstance(), () -> {
-            int[] count;
+            int[] countWorld, countNether;
 
             if (args.length == 1) {
                 if (!p.hasPermission("protectionstones.count")) {
@@ -77,11 +104,10 @@ public class ArgCount implements PSCommandArg {
                     return;
                 }
 
-                count = countRegionsOfPlayer(p.getUniqueId(), p.getWorld());
-                PSL.msg(p, PSL.PERSONAL_REGION_COUNT.msg().replace("%num%", "" + count[0]));
-                if (count[1] != 0) {
-                    PSL.msg(p, PSL.PERSONAL_REGION_COUNT_MERGED.msg().replace("%num%", ""+count[1]));
-                }
+                countWorld = countRegionsOfPlayer(p.getUniqueId(), Bukkit.getWorld("world"));
+                countNether = countRegionsOfPlayer(p.getUniqueId(), Bukkit.getWorld("world_nether"));
+                p.sendMessage(ChatColor.YELLOW + "Twój limit działek: " + getAmountPermissionPlots(p));
+                p.sendMessage(ChatColor.YELLOW + "Posiadasz " + countWorld[0] + " działek na powierzchni oraz " + countNether[0] + " działek w Netherze.");
 
             } else if (args.length == 2) {
 
@@ -95,16 +121,10 @@ public class ArgCount implements PSCommandArg {
                 }
 
                 UUID countUuid = UUIDCache.getUUIDFromName(args[1]);
-                count = countRegionsOfPlayer(countUuid, p.getWorld());
+                countWorld = countRegionsOfPlayer(countUuid, Bukkit.getWorld("world"));
+                countNether = countRegionsOfPlayer(countUuid, Bukkit.getWorld("world_nether"));
+                p.sendMessage(ChatColor.YELLOW + "Gracz " + args[1] + " posiada " + countWorld[0] + " działek na powierzchni oraz " + countNether[0] + " działek w Netherze.");
 
-                PSL.msg(p, PSL.OTHER_REGION_COUNT.msg()
-                        .replace("%player%", UUIDCache.getNameFromUUID(countUuid))
-                        .replace("%num%", "" + count[0]));
-                if (count[1] != 0) {
-                    PSL.msg(p, PSL.OTHER_REGION_COUNT_MERGED.msg()
-                            .replace("%player%", UUIDCache.getNameFromUUID(countUuid))
-                            .replace("%num%", "" + count[1]));
-                }
             } else {
                 PSL.msg(p, PSL.COUNT_HELP.msg());
             }
