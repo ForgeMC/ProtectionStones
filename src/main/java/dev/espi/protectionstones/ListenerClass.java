@@ -219,12 +219,16 @@ public class ListenerClass implements Listener {
             PSProtectBlock ppb = ProtectionStones.getBlockOptions(e.getClickedBlock());
             PSRegion r = PSRegion.fromLocation(e.getClickedBlock().getLocation());
             if (ppb.allowShiftRightBreak && e.getPlayer().isSneaking()) {
-                if (r != null && playerBreakProtection(e.getPlayer(), r)) { // successful
+                if (r != null && playerBreakProtection(e.getPlayer(), r)) {
                     e.getClickedBlock().setType(Material.AIR);
                 }
             }
-            Player player = e.getPlayer();
-            GUIScreen.openGUI(player, r, GuiCategory.HOME);
+
+            if(r != null && e.getPlayer().getUniqueId().equals(r.getOwners().get(0))){
+                Player player = e.getPlayer();
+                //GUIScreen.openGUI(player, r, GuiCategory.HOME);
+                //TODO ficzer gui
+            }
         }
     }
 
